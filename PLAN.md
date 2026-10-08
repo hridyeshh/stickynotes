@@ -8,7 +8,7 @@ under the page's section heading, filed into a **topic**: one note per subject, 
 on consistent hashing become one "Consistent hashing" note with a Sources list at the end. Google
 sign-in, private by default, share a topic by link, export, delete account.
 
-## Repos (GitHub remotes set, nothing committed yet)
+## Repos (initial commits pushed to `main`)
 | Repo | What | Run |
 |---|---|---|
 | `stickynotes/` (hridyeshh/stickynotes) | Next.js 15 site at the root; extension goes in `extension/` (phase 3) | `npm install && npm run dev` (:3000) |
@@ -19,7 +19,7 @@ Env files, both gitignored:
 - `stickynotes-backend/.env`: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_IDS, PORT.
 
 **Never reuse paperboxd env values.** Google Cloud project "stickynotes" has one Web OAuth client.
-Its redirect URI is `http://localhost:3000/api/auth/callback/google`.
+Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop paperboxd's dev server (also :3000) first.
 
 ## Design source
 - Claude Design project `6442e43f-b855-4ffb-922a-5f52b3610e64`. Read it with DesignSync `get_file` after `/design-login`.
@@ -64,12 +64,13 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`.
 ## Phases
 - [x] **1. Backend foundation.** Auth endpoints (`/auth/google`, `/refresh`, `/logout`, GET/DELETE `/me`),
   migration 000001 with every table, and tests (`make test`: unit plus integration against docker Postgres on :5433).
-- [~] **2. Web skeleton + sign-in.** Code is written but NOT yet installed or verified. Next steps:
-  1. `cd stickynotes && npm install && npm install -D typescript @types/node @types/react @types/react-dom oxlint`
-  2. `npm run build && npm run lint && npm test`, and fix whatever fails. If oxlint ignores
-     `no-restricted-syntax`, replace the design lint with a grep for hex/px values in `.tsx`.
-  3. Run the backend (`make docker-up && make dev`) and `npm run dev`. Sign in at
-     http://localhost:3000/signin; you should land on `/library` showing your initials, and Sign out should work.
+- [x] **2. Web skeleton + sign-in.** Done and verified 2026-10-09. Build, lint and test pass. A real Google
+  sign-in lands on `/library` and Sign out works; the API logged auth/google 200, me 200 and logout 204.
+  - `next` bumped to 15.5.27 to clear critical RCE advisories.
+  - `typescript` pinned to ^5: TypeScript 7 lacks the JS API that Next 15 calls.
+  - oxlint has no `no-restricted-syntax`, so the design check is now a hex/px grep over `.tsx` in `npm run lint`.
+  - A local smoke test also passed: open redirects are blocked, the Google redirect carries PKCE S256 + state,
+    and both callback error paths work.
   Pages: `/` landing (topic copy), `/signin`, `/privacy` and `/terms` (drafts), `/library` placeholder.
 - [ ] **3. Sync end to end.**
   - **Go:** POST `/extension/codes`, POST `/extension/token` (PKCE S256), POST `/sync/push`, GET `/sync/pull`.
@@ -132,10 +133,19 @@ service. Variables:
 Health check path `/health`. Migrations run on boot. Redis is not needed (no cache, and the in-memory
 rate limit is fine on one instance); add it with httprate-redis only when running more than one replica.
 
+Status 2026-10-09: Railway project `diplomatic-truth` (auto-named) has `stickynotes-backend` (deploys from
+GitHub `main` via Railpack) and `Postgres` (private network only). `stickynotes-backend/` is `railway link`ed.
+The three variables are set, and the backend boots against Postgres with migrations applied. Redis was skipped
+again on 2026-10-09. Still to do:
+- Set the `/health` health check path (dashboard → Settings). Without it, a crash-looping deploy shows SUCCESS.
+- Add a public domain (`railway domain`) once the web needs one.
+
 **Web on Vercel** (phase 7): set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and API_URL=<Railway URL>. Add the
 prod origin and `https://<domain>/api/auth/callback/google` to the Google OAuth client.
 
 ## Known limits (marked with ponytail comments in the code)
+- `npm audit` still flags postcss 8.4.31, which Next 15 pins; the fix needs Next 16. It only matters for
+  untrusted CSS, and the app processes none.
 - Each sign-in makes one tokeninfo round-trip to Google.
 - The refresh rate limit is keyed by IP behind the Next server.
 - Two tabs refreshing at the same moment can send one of them to `/signin`.

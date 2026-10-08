@@ -1,20 +1,5 @@
 {
-  "plugins": ["react", "import"],
-  "rules": {
-    "no-restricted-syntax": [
-      "warn",
-      {
-        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
-        "message": "Raw hex color — use a design-system color token via var()."
-      },
-      {
-        "selector": "Literal[value=/\\b\\d+px\\b/]",
-        "message": "Raw px value — use a design-system spacing token via var()."
-      },
-      {
-        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Cormorant Garamond|Lora))/i]",
-        "message": "Font not provided by the design system. Available: Cormorant Garamond, Lora."
-      }
-    ]
-  }
+  // oxlint has no no-restricted-syntax, so the design check (no raw hex/px in .tsx)
+  // is a grep in the `lint` script of package.json.
+  "plugins": ["react", "import"]
 }
