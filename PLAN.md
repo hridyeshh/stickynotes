@@ -72,16 +72,35 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
   - A local smoke test also passed: open redirects are blocked, the Google redirect carries PKCE S256 + state,
     and both callback error paths work.
   Pages: `/` landing (topic copy), `/signin`, `/privacy` and `/terms` (drafts), `/library` placeholder.
-- [ ] **3. Sync end to end.**
-  - **Go:** POST `/extension/codes`, POST `/extension/token` (PKCE S256), POST `/sync/push`, GET `/sync/pull`.
-    Integration test covering repeat-safe actions, same-title merge, and user A unable to touch user B's data.
-  - **Extension**, in `stickynotes/extension/`. Copy the zip in first and commit it unchanged. Then:
-    - `config.js`.
-    - Background worker as the only writer: outbox, push/pull, alarms, and one refresh in flight at a time.
-    - Bridge in `content.js`: web origin only, check `event.source` and origin.
-    - Migrate the v1 `pages` blob on first connect.
-    - Manifest: add the API to host_permissions, plus alarms.
-  - **Web:** the `/extension/connect` page.
+- [~] **3. Sync end to end.** Built 2026-10-09 on branch `phase-3` in both repos (local commits, not pushed). The Go
+  integration test and the extension unit tests pass. The browser glue (bridge, popup, worker) is untested until the
+  morning check below.
+  - **Go:**
+    - `/extension/codes` and `/extension/token`: PKCE S256, single-use codes that last 60 s.
+    - `/sync/push`: create_topic, create_highlight, delete_highlight, move_source. Each action runs in its own
+      savepoint. A same-title topic merges, and the response returns an id map.
+    - `/sync/pull`: everything since cursor − 5 min, with deletion markers. A delete that empties a source deletes it too.
+  - **Extension:**
+    - v1 was imported unchanged first (`2877abe`).
+    - `config.js` holds the API and web origins.
+    - `sync.js` is the store and outbox, tested under node.
+    - `background.js` is the only writer: queued writes, push then pull, a 5-minute alarm, one refresh in flight.
+    - `content.js` saves through the worker and keeps the query string in the URL. It carries the bridge.
+    - The popup has Connect/Disconnect; the notes page groups by topic, with v1-compatible Backup/Restore.
+  - **Web:** `/extension/connect` (signed-in only) hands the extension a code through the bridge.
+  - Changed from the plan:
+    - No v1 `pages` migration: there were no v1 notes to keep, and v1 backups still import via Restore.
+    - No `launchWebAuthFlow` fallback; add it if the bridge proves flaky.
+    - The topic is the page heading until phase 4's matcher.
+  - **Morning check (about 5 min):**
+    1. Run the backend from branch phase-3 (`make docker-up && make dev`) and the web (`npm run dev`).
+    2. chrome://extensions → Developer mode → Load unpacked → `stickynotes/extension`.
+    3. Popup → Connect → sign in if asked. The page should say "Connected as …".
+    4. Save a passage on any article: toast "Saved to …"; the popup lists it and shows "Syncing as …" with nothing waiting.
+    5. Load and connect the extension in a second Chrome profile. Open its popup: the note appears.
+    6. Delete the note in one profile, then open the other's popup: it is gone.
+    7. Disconnect: the popup shows Connect. Connect again and the note comes back from the account.
+    8. Then merge `phase-3` into main in both repos. Pushing the backend's main deploys to Railway.
 - [ ] **4. Topics + extension UX.**
   - Pure modules with `node --test`:
     - `url.js`: canonical link, else the URL minus utm/fbclid/hash.
@@ -144,6 +163,11 @@ again on 2026-10-09. Still to do:
 prod origin and `https://<domain>/api/auth/callback/google` to the Google OAuth client.
 
 ## Known limits (marked with ponytail comments in the code)
+- The extension store is one storage key, rewritten on every save. Split it per record if stores reach many MB.
+- A first pull sends every live note in one response. Page it past tens of thousands of highlights.
+- If the extension's worker stops between the API rotating its refresh token and storing the new one, the
+  extension has to be connected again.
+- For production, set the origins in `extension/config.js` and the API origin in the manifest's host_permissions.
 - `npm audit` still flags postcss 8.4.31, which Next 15 pins; the fix needs Next 16. It only matters for
   untrusted CSS, and the app processes none.
 - Each sign-in makes one tokeninfo round-trip to Google.
