@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { width: 380px; padding: 14px; }
+    #notes { max-height: 360px; overflow: auto; margin: 10px 0; }
+    label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+    header { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+    footer { border-top: 1px solid var(--border); padding-top: 10px; justify-content: space-between; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2 id="title">This page</h2>
+    <div class="muted" id="count"></div>
+  </header>
+  <div id="notes"></div>
+  <footer class="row">
+    <label><input type="checkbox" id="auto"> Auto-save on select</label>
+    <div class="row">
+      <button id="copy">Copy MD</button>
+      <button id="all" class="primary">All notes</button>
+    </div>
+  </footer>
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
