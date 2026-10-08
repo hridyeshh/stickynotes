@@ -1,14 +1,24 @@
-// Helpers shared by popup.html and notes.html
+// Helpers shared by popup.html and notes.html. These pages only read the store;
+// changes go to background.js by message.
 const HN = {
-  async getPages() {
-    const { pages = {} } = await chrome.storage.local.get('pages');
-    return pages;
+  async getStore() {
+    const { store } = await chrome.storage.local.get('store');
+    return store || SN.emptyStore();
   },
-  async setPages(pages) { await chrome.storage.local.set({ pages }); },
+  async getAuth() {
+    return (await chrome.storage.local.get('auth')).auth;
+  },
+  send: (msg) => chrome.runtime.sendMessage(msg),
 
   esc(s) {
     return String(s).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+
+  /** One page's notes, oldest first. */
+  notesFor(store, url) {
+    return Object.values(store.highlights).filter((h) => h.url === url)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
   },
 
   // Group notes by section, keeping the order sections first appeared in
@@ -22,22 +32,26 @@ const HN = {
     return [...map.entries()];
   },
 
-  pageToMarkdown(page) {
-    let md = `# ${page.title}\n\nSource: ${page.url}\n\n`;
-    for (const [sec, notes] of HN.groupBySection(page.notes)) {
+  /** A topic as Markdown: notes by section, each marked [n] with its source, then
+   *  the numbered Sources list. */
+  topicToMarkdown(store, topicId) {
+    const sources = Object.values(store.sources).filter((s) => s.topic_id === topicId);
+    const notes = sources.flatMap((s, i) => HN.notesFor(store, s.url).map((n) => ({ ...n, ref: i + 1 })));
+    let md = `# ${store.topics[topicId]?.title || 'Notes'}\n\n`;
+    for (const [sec, list] of HN.groupBySection(notes)) {
       if (sec) md += `## ${sec}\n\n`;
-      md += notes.map((n) => `- ${n.text}`).join('\n') + '\n\n';
+      md += list.map((n) => `- ${n.text} [${n.ref}]`).join('\n') + '\n\n';
     }
-    return md.trimEnd() + '\n';
+    return md + '## Sources\n\n' + sources.map((s, i) => `${i + 1}. [${s.title || s.url}](${s.url})`).join('\n') + '\n';
   },
 
-  // Renders one page's notes; onDelete(noteId) is called for the × buttons
-  renderNotes(page, container, onDelete) {
-    container.innerHTML = HN.groupBySection(page.notes).map(([sec, notes]) => `
+  // Renders notes; onDelete(noteId) is called for the × buttons
+  renderNotes(notes, container, onDelete) {
+    container.innerHTML = HN.groupBySection(notes).map(([sec, list]) => `
       ${sec ? `<h3 class="section">${HN.esc(sec)}</h3>` : ''}
-      <ul>${notes.map((n) => `
+      <ul>${list.map((n) => `
         <li><span>${HN.esc(n.text)}</span>
-          <button class="del" data-id="${n.id}" title="Delete note">×</button></li>`).join('')}
+          <button class="del" data-id="${HN.esc(n.id)}" title="Delete note">×</button></li>`).join('')}
       </ul>`).join('');
     container.querySelectorAll('.del').forEach((b) =>
       b.addEventListener('click', () => onDelete(b.dataset.id)));

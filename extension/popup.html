@@ -9,6 +9,7 @@
     label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
     header { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
     footer { border-top: 1px solid var(--border); padding-top: 10px; justify-content: space-between; }
+    #account { margin-top: 10px; justify-content: space-between; }
   </style>
 </head>
 <body>
@@ -24,6 +25,9 @@
       <button id="all" class="primary">All notes</button>
     </div>
   </footer>
+  <div class="row muted" id="account"></div>
+  <script src="config.js"></script>
+  <script src="sync.js"></script>
   <script src="shared.js"></script>
   <script src="popup.js"></script>
 </body>

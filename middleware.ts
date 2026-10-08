@@ -36,5 +36,5 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   // Phase 5 adds /t, /settings and /onboarding.
-  matcher: ["/library/:path*"],
+  matcher: ["/library/:path*", "/extension/:path*"],
 };

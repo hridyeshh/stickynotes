@@ -1,5 +1,6 @@
 (() => {
   const MIN_LEN = 3;
+  const MAX_LEN = 10000; // the server's limit
   let autoSave = false;
 
   chrome.storage.local.get('settings', ({ settings }) => { autoSave = !!settings?.autoSave; });
@@ -7,10 +8,10 @@
     if (c.settings) autoSave = !!c.settings.newValue?.autoSave;
   });
 
-  // One note page per URL (ignoring #hash and ?query)
-  const pageKey = () => location.origin + location.pathname;
+  // One source per URL. The query string stays, so HN's item?id= and YouTube's
+  // watch?v= pages stay apart; only the #hash goes.
+  const pageUrl = () => location.href.split('#')[0];
   const clean = (s) => (s || '').replace(/\s+/g, ' ').trim().slice(0, 200);
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
   // ---- Heading detection ----
   function pageHeading() {
@@ -80,30 +81,28 @@
     return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
   }
 
-  // ---- Save ----
+  // ---- Save. The background worker files it, so tabs never overwrite each other. ----
   async function saveSelection() {
     hideBtn();
     const sel = window.getSelection();
     const text = (sel?.toString() || '').replace(/\s+/g, ' ').trim();
     if (!text || text.length < MIN_LEN || !sel.rangeCount) return false;
+    if (!/^https?:$/.test(location.protocol)) { toast('Notes can only be saved on web pages.'); return false; }
+    if (text.length > MAX_LEN) { toast('That selection is too long to save.'); return false; }
 
     const range = sel.getRangeAt(0).cloneRange();
-    const key = pageKey();
-    const { pages = {} } = await chrome.storage.local.get('pages');
-    const page = pages[key] || {
-      url: key, title: pageHeading(), site: location.hostname,
-      createdAt: Date.now(), notes: []
-    };
-    if (page.notes.some((n) => n.text === text)) { toast('Already in your notes'); return false; }
-
-    page.notes.push({ id: uid(), text, section: sectionHeading(range.startContainer), createdAt: Date.now() });
-    page.updatedAt = Date.now();
-    pages[key] = page;
-    await chrome.storage.local.set({ pages });
+    const title = pageHeading();
+    const res = await chrome.runtime.sendMessage({
+      type: 'save',
+      // ponytail: the topic is the page heading until phase 4's topic matcher.
+      input: { url: pageUrl(), pageTitle: title, site: location.hostname, topicTitle: title, text, section: sectionHeading(range.startContainer) || '' },
+    }).catch(() => ({ error: 'stickynotes was updated. Reload this page to save again.' }));
+    if (res?.error) { toast(res.error); return false; }
+    if (!res?.topic) { toast('Already in your notes'); return false; }
 
     markRange(range);
     sel.removeAllRanges();
-    toast(`Saved to “${page.title}” (${page.notes.length})`);
+    toast(`Saved to “${res.topic}” (${res.count})`);
     return true;
   }
 
@@ -129,4 +128,25 @@
   chrome.runtime.onMessage.addListener((msg, _s, reply) => {
     if (msg?.type === 'save-selection') { saveSelection().then(reply); return true; }
   });
+
+  // ---- Bridge to the web app, for connecting this browser. Only on the app's own
+  // origin and top frame, and only for messages the page itself posted. Tokens never
+  // pass through here: the page gets a challenge and returns a single-use code. ----
+  if (location.origin === SN_CONFIG.WEB_ORIGIN && window === window.top) {
+    let started = false;
+    const post = (msg) => window.postMessage(msg, SN_CONFIG.WEB_ORIGIN);
+    const ask = (msg) => chrome.runtime.sendMessage(msg).catch(() => ({ error: 'The extension was updated. Reload this page.' }));
+    window.addEventListener('message', async (e) => {
+      if (e.source !== window || e.origin !== SN_CONFIG.WEB_ORIGIN || typeof e.data?.type !== 'string') return;
+      if (e.data.type === 'sn:hello' && !started) {
+        started = true;
+        const r = await ask({ type: 'connect:start' });
+        post(r.challenge ? { type: 'sn:challenge', challenge: r.challenge } : { type: 'sn:error', error: r.error });
+      } else if (e.data.type === 'sn:code' && typeof e.data.code === 'string') {
+        const r = await ask({ type: 'connect:finish', code: e.data.code });
+        post(r.email ? { type: 'sn:connected', email: r.email } : { type: 'sn:error', error: r.error });
+      }
+    });
+    post({ type: 'sn:ready' });
+  }
 })();

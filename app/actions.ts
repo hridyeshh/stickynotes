@@ -2,8 +2,20 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/session";
+
+/** Mints a single-use code for the extension's PKCE challenge (/extension/connect). */
+export async function createExtensionCode(challenge: string): Promise<{ code?: string; error?: string }> {
+  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
+  try {
+    return await api<{ code: string }>("/api/v1/extension/codes", { method: "POST", token, body: { code_challenge: challenge } });
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 401) return { error: "Your session expired." };
+    console.error("extension code failed", e);
+    return { error: "We couldn't reach stickynotes." };
+  }
+}
 
 export async function signOut() {
   const jar = await cookies();

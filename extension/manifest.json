@@ -1,19 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Highlight Notes",
-  "version": "1.0.0",
-  "description": "Select text on any page to save it as a note, grouped under that page's heading.",
-  "permissions": ["storage", "contextMenus"],
+  "name": "stickynotes",
+  "version": "0.3.0",
+  "description": "Select text on any page to keep it as a note, filed under its topic with every source listed.",
+  "permissions": ["storage", "unlimitedStorage", "contextMenus", "alarms"],
+  "host_permissions": ["http://localhost:8080/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["config.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
   ],
-  "action": { "default_popup": "popup.html", "default_title": "Highlight Notes" },
+  "action": { "default_popup": "popup.html", "default_title": "stickynotes" },
   "commands": {
     "save-selection": {
       "suggested_key": { "default": "Alt+S" },
