@@ -1,0 +1,113 @@
+/* stickynotes app styles, layered on the Classical design system (classical.css). */
+
+:root {
+  /* next/font self-hosts the faces and exposes them as these variables. */
+  --font-heading: var(--font-cormorant), Georgia, serif;
+  --font-body: var(--font-lora), Georgia, serif;
+  /* Errors and destructive actions: the prototype's red, which the DS lacks. */
+  --color-danger: #9e3b2b;
+  --gutter: clamp(20px, 5vw, 56px);
+}
+
+/* Accent text at body size needs the deep step for contrast (DS readme). */
+a { color: var(--color-accent-700); }
+a:not([class]):hover { color: var(--color-accent-800); }
+.btn-primary { color: var(--color-accent-700); }
+.btn-lg { font-size: 17px; padding: 11px 20px; }
+.kicker { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent-700); font-variant-numeric: tabular-nums; }
+.justify { text-align: justify; hyphens: auto; }
+
+/* A note bullet: a small accent dot. */
+.bullet { position: relative; padding-left: 14px; }
+.bullet::before { content: ""; position: absolute; left: 0; top: .62em; width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent); }
+
+/* — brand — */
+.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--color-text); text-decoration: none; }
+.brand-mark {
+  width: 24px; height: 24px; display: grid; place-items: center; padding-bottom: 3px;
+  border: 1.5px solid var(--color-accent); border-radius: 3px;
+  font: italic 600 17px/1 var(--font-heading); color: var(--color-accent-700);
+}
+.brand-name { font: 600 21px/1.2 var(--font-heading); letter-spacing: -.01em; }
+
+/* — public header & footer — */
+.site-header { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; padding: 18px var(--gutter); border-bottom: 1px solid var(--color-divider); }
+.site-header .brand { margin-right: auto; }
+.site-nav { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; font-size: 14px; }
+.site-nav a:not(.btn) { color: var(--color-text); text-decoration: none; }
+.site-nav a:not(.btn):hover { color: var(--color-accent-700); }
+.site-footer { display: flex; gap: 22px; flex-wrap: wrap; padding: 22px var(--gutter); border-top: 1px solid var(--color-divider); font-size: 13px; color: var(--color-neutral-700); }
+.site-footer span { margin-right: auto; }
+.site-footer a { color: var(--color-neutral-700); }
+
+/* — landing — */
+.landing { max-width: 1140px; margin: 0 auto; padding: clamp(40px, 8vw, 96px) var(--gutter) 0; }
+.hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: clamp(40px, 6vw, 72px); align-items: center; }
+.hero .kicker { margin-bottom: 18px; }
+.hero-title { font-weight: 400; font-size: clamp(46px, 6.4vw, 76px); line-height: 1; letter-spacing: -.02em; margin: 0 0 24px; text-wrap: balance; }
+.hero-lede { font-size: 17px; line-height: 1.65; max-width: 31em; margin: 0 0 30px; text-wrap: pretty; }
+.hero-note { font-size: 13px; color: var(--color-neutral-700); margin: 16px 0 0; }
+.band { margin-top: clamp(64px, 10vw, 120px); padding-top: 40px; border-top: 1px solid var(--color-divider); }
+.band h2 { font-size: 32px; line-height: 1.1; margin: 0 0 32px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 40px; }
+.steps li { display: grid; gap: 10px; align-content: start; }
+.steps h3 { font-size: 22px; margin: 0; }
+.steps p { margin: 0; line-height: 1.65; }
+.step-num { font: 400 40px/1 var(--font-heading); color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.privacy { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 40px; }
+.privacy h2 { margin: 0; }
+.privacy p { margin: 0; font-size: 16px; line-height: 1.7; }
+.cta { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; padding: 56px 0 64px; }
+.cta h2 { font-weight: 400; font-size: clamp(32px, 4vw, 44px); line-height: 1.05; margin: 0; max-width: 16em; }
+
+/* Hero art: a generic third-party page (deliberately not in our type) plus the library card. */
+.hero-art { position: relative; padding: 8px 0 40px; }
+.demo-page { max-width: 440px; padding: 26px 28px 34px; background: #fff; color: #222; font-family: Helvetica, Arial, sans-serif; border: 1px solid var(--color-divider); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.demo-url { font-size: 11px; color: #888; margin-bottom: 10px; }
+.demo-h1 { font-size: 21px; font-weight: 700; margin-bottom: 12px; }
+.demo-h2 { font-size: 12px; font-weight: 700; color: #555; margin-bottom: 6px; }
+.demo-p { font-size: 14px; line-height: 1.65; margin: 0; }
+.demo-p mark { background: var(--color-accent-200); color: inherit; }
+.demo-save { display: flex; width: max-content; margin: 10px 0 0 auto; padding: 6px 11px; background: var(--color-neutral-100); border: 1px solid var(--color-accent); border-radius: var(--radius-md); box-shadow: var(--shadow-md); font: 600 15px/1.2 var(--font-heading); color: var(--color-accent-700); }
+.demo-library { position: relative; width: min(320px, 86%); margin: -22px 0 0 auto; padding: 20px 22px; background: var(--color-bg); border: 1px solid var(--color-divider); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.demo-library .kicker { font-size: 10px; margin-bottom: 6px; }
+.demo-topic { font: 600 22px/1.15 var(--font-heading); margin-bottom: 12px; }
+.demo-section { font: 600 15px/1.2 var(--font-heading); margin-bottom: 4px; }
+.demo-library .bullet { font-size: 13px; line-height: 1.55; }
+.demo-synced { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-divider); font-size: 11px; color: var(--color-neutral-700); }
+.demo-synced svg { color: var(--color-accent-700); }
+
+/* — sign in — */
+.auth-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+.auth-page > .brand { margin-bottom: clamp(32px, 8vh, 80px); }
+.auth-card { width: 100%; max-width: 400px; padding: 32px 30px; border: 1px solid var(--color-divider); border-radius: var(--radius-lg); }
+.auth-card h1 { font-size: 30px; margin: 0 0 8px; }
+.auth-card p { font-size: 14px; margin: 0 0 24px; }
+.auth-card .btn { font-size: 17px; padding: 11px 16px; gap: 10px; margin: 0; }
+.auth-error { color: var(--color-danger); }
+.auth-fine { max-width: 360px; margin-top: 18px; text-align: center; font-size: 12px; color: var(--color-neutral-700); }
+/* Google's mark keeps its own colours (Google sign-in branding rules). */
+.g-logo .r { fill: #ea4335; }
+.g-logo .b { fill: #4285f4; }
+.g-logo .y { fill: #fbbc05; }
+.g-logo .g { fill: #34a853; }
+
+/* — legal pages — */
+.legal { max-width: 680px; margin: 0 auto; padding: clamp(32px, 6vw, 56px) 20px 96px; }
+.legal h1 { font-weight: 400; font-size: clamp(38px, 5vw, 48px); line-height: 1; margin: 8px 0 24px; }
+.legal h2 { font-size: 22px; margin: 32px 0 8px; }
+.legal p, .legal li { line-height: 1.7; }
+.legal li { margin-bottom: 8px; }
+
+/* — signed-in app — */
+.app-header { display: flex; align-items: center; gap: clamp(12px, 2.5vw, 24px); flex-wrap: wrap; padding: 14px clamp(16px, 4vw, 40px); border-bottom: 1px solid var(--color-divider); }
+.app-header .brand { margin-right: auto; }
+.app-nav { display: flex; gap: 4px; font-size: 14px; }
+.app-nav a { padding: 6px 10px; border-radius: var(--radius-md); color: var(--color-text); text-decoration: none; }
+.app-nav a:hover, .app-nav a[aria-current="page"] { color: var(--color-accent-700); }
+.avatar { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--color-accent); border-radius: 50%; font: 600 14px/1 var(--font-heading); color: var(--color-accent-700); }
+.page { max-width: 780px; margin: 0 auto; padding: clamp(32px, 6vw, 56px) clamp(16px, 4vw, 24px) 96px; }
+.page-title { font-weight: 400; font-size: clamp(38px, 5vw, 48px); line-height: 1; letter-spacing: -.015em; margin: 0 0 24px; }
+.empty { display: grid; gap: 14px; justify-items: center; padding: 56px 0; text-align: center; }
+.empty-title { font: 400 26px/1.2 var(--font-heading); }
+.empty p { margin: 0; max-width: 24em; }

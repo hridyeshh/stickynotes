@@ -1,0 +1,18 @@
+{
+  "name": "stickynotes",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "oxlint",
+    "test": "node --test lib/session.test.ts"
+  },
+  "dependencies": {
+    "lucide-react": "^0.553.0",
+    "next": "15.5.23",
+    "react": "19.1.2",
+    "react-dom": "19.1.2"
+  }
+}
