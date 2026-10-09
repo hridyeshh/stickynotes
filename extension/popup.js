@@ -1,60 +1,85 @@
+// The toolbar popup: this page's topic and note count, sync state, auto-save and
+// the way to the notes. It reads the store; changes go to background.js.
 (async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  // The same key content.js saves under: the URL without its #hash.
-  const url = /^https?:/.test(tab?.url || '') ? tab.url.split('#')[0] : null;
   const $ = (id) => document.getElementById(id);
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  // The page's content script knows its address (canonical link, in-app navigation).
+  const page = tab?.id === undefined ? null
+    : await chrome.tabs.sendMessage(tab.id, { type: 'page-url' }).catch(() => null);
   let topicId = null;
+  let syncing = true;
+  let syncError = '';
+
+  function initials(user) {
+    const words = (user?.name || '').split(/\s+/).filter(Boolean);
+    return (words.length ? words.slice(0, 2).map((w) => w[0]) : [user?.email?.[0] || '?']).join('').toUpperCase();
+  }
+
+  function syncLine(auth, waiting) {
+    if (!auth) return ['Not connected. Notes stay on this device.', 'off'];
+    if (syncing) return ['Syncing your notes…', ''];
+    if (syncError) {
+      return [waiting ? `Offline. ${plural(waiting, 'change')} will sync when you reconnect.` : 'Offline. New notes are kept on this device.', 'off'];
+    }
+    if (waiting) return [`${plural(waiting, 'change')} waiting to sync`, ''];
+    return ['All notes synced', 'synced'];
+  }
 
   async function render() {
-    const store = await HN.getStore();
-    const notes = url ? HN.notesFor(store, url) : [];
-    const source = url && store.sources[url];
-    topicId = source?.topic_id ?? null;
-    if (!notes.length) {
-      $('title').textContent = 'No notes on this page yet';
-      $('count').textContent = 'Select text, then click “＋ Save note” (or press Alt+S).';
-      $('notes').innerHTML = '';
-      $('copy').disabled = true;
+    const [store, auth] = await Promise.all([HN.getStore(), HN.getAuth()]);
+    const notes = page?.url ? SN.notesFor(store, page.url) : [];
+    topicId = notes.length ? store.sources[page.url]?.topic_id ?? null : null;
+    const sections = new Set(notes.map((n) => n.section).filter(Boolean)).size;
+    if (!page?.url) {
+      $('title').textContent = "Notes can't be saved here";
+      $('count').textContent = 'Open a web page, or reload this one, to save notes on it.';
     } else {
-      $('title').textContent = store.topics[topicId]?.title || source.title;
-      $('count').textContent = `${notes.length} note${notes.length > 1 ? 's' : ''} from this page`;
-      $('copy').disabled = false;
-      HN.renderNotes(notes, $('notes'), (id) => HN.send({ type: 'delete', ids: [id] }));
+      $('title').textContent = store.topics[topicId]?.title || page.title || 'This page';
+      $('count').textContent = notes.length
+        ? plural(notes.length, 'note') + (sections ? ` · ${plural(sections, 'section')}` : '')
+        : 'No notes on this page yet';
     }
-    renderAccount(store);
+    $('page').disabled = !topicId;
+
+    $('who').textContent = auth?.user.email || '';
+    $('initials').textContent = auth ? initials(auth.user) : '';
+    $('initials').hidden = !auth;
+    $('connect').hidden = !!auth;
+    $('disconnect').hidden = !auth;
+    const [text, tone] = syncLine(auth, store.outbox.length);
+    $('sync').textContent = text;
+    $('dot').className = `dot ${tone}`;
   }
 
-  async function renderAccount(store) {
-    const auth = await HN.getAuth();
-    const waiting = store.outbox.length ? ` · ${store.outbox.length} waiting to sync` : '';
-    $('account').innerHTML = auth
-      ? `<span>Syncing as ${HN.esc(auth.user.email)}${waiting}</span><button id="disconnect">Disconnect</button>`
-      : `<span>Not connected${waiting}</span><button id="connect" class="primary">Connect</button>`;
-    if (!auth) {
-      $('connect').onclick = () => chrome.tabs.create({ url: SN_CONFIG.WEB_ORIGIN + '/extension/connect' });
-      return;
-    }
-    $('disconnect').onclick = async () => {
-      if (!confirm('Disconnect this browser? Your notes stay in your stickynotes account.')) return;
-      const r = await HN.send({ type: 'disconnect' });
-      if (r?.error) $('account').firstChild.textContent = r.error;
-    };
-  }
-
-  const { settings = {} } = await chrome.storage.local.get('settings');
-  $('auto').checked = !!settings.autoSave;
-  $('auto').addEventListener('change', (e) =>
-    chrome.storage.local.set({ settings: { ...settings, autoSave: e.target.checked } }));
-
-  $('copy').addEventListener('click', async () => {
-    await navigator.clipboard.writeText(HN.topicToMarkdown(await HN.getStore(), topicId));
-    $('copy').textContent = 'Copied!';
-    setTimeout(() => ($('copy').textContent = 'Copy MD'), 1200);
+  const { settings = {} } = await chrome.storage.sync.get('settings');
+  $('auto').setAttribute('aria-checked', String(!!settings.autoSave));
+  $('auto').addEventListener('click', () => {
+    const on = $('auto').getAttribute('aria-checked') !== 'true';
+    $('auto').setAttribute('aria-checked', String(on));
+    chrome.storage.sync.set({ settings: { ...settings, autoSave: on } });
   });
-  $('all').addEventListener('click', () =>
-    chrome.tabs.create({ url: chrome.runtime.getURL('notes.html') }));
+
+  const open = (url) => {
+    chrome.tabs.create({ url });
+    window.close();
+  };
+  // ponytail: both open the extension's notes page until the web library (phase 5)
+  // has /library and /t/[id].
+  $('page').addEventListener('click', () => open(chrome.runtime.getURL(`notes.html#${topicId}`)));
+  $('library').addEventListener('click', () => open(chrome.runtime.getURL('notes.html')));
+  $('connect').addEventListener('click', () => open(`${SN_CONFIG.WEB_ORIGIN}/extension/connect`));
+  $('disconnect').addEventListener('click', async () => {
+    if (!confirm('Disconnect this browser? Your notes stay in your stickynotes account.')) return;
+    const r = await HN.send({ type: 'disconnect' });
+    if (r?.error) $('sync').textContent = r.error;
+  });
 
   chrome.storage.onChanged.addListener((c) => { if (c.store || c.auth) render(); });
   render();
-  HN.send({ type: 'sync' }).catch(() => {}); // opening the popup is a sync trigger
+  // Opening the popup is a sync trigger.
+  const r = await HN.send({ type: 'sync' }).catch((e) => ({ error: e.message }));
+  syncing = false;
+  syncError = r?.error || '';
+  render();
 })();

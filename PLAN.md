@@ -108,16 +108,41 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     6. Delete the note in one profile, then open the other's popup: it is gone.
     7. Disconnect: the popup shows Connect. Connect again and the note comes back from the account.
     8. Then merge `phase-3` into main in both repos. Pushing the backend's main deploys to Railway.
-- [ ] **4. Topics + extension UX.**
-  - Pure modules with `node --test`:
-    - `url.js`: canonical link, else the URL minus utm/fbclid/hash.
-    - `topic.js`: the matcher.
-    - `anchor.js`: exact text plus 32-character prefix/suffix.
+- [~] **4. Topics + extension UX.** Built 2026-10-10 on branch `phase-4` of this repo (local commit, stacked on
+  `phase-3`; the backend needed no changes). `npm test` (17 tests) and lint pass. Headless Chrome ran `content.js` on
+  a test page with `chrome.*` stubbed: it saved two passages (one across an `<em>`), found a repeated sentence's
+  second copy by its anchor, and restored it on load. The real extension is untested until the check below.
+  - `page.js`, one module in place of the plan's url/topic/anchor:
+    - Address: the canonical link, when it is on the same site, isn't the homepage for every page, and wasn't left
+      behind by in-app navigation. Otherwise the URL without utm_*/fbclid/gclid-style parameters or the #hash.
+    - Topic: the h1, else the title without the site's name, minus filler ("A guide to", "explained"). An existing
+      topic whose words all appear wins, most words first. Topics with no notes left are skipped.
+    - Anchor: the passage plus 32 characters either side, compared without whitespace.
   - `content.js`:
-    - Classical-styled button and toast (Undo / Change / View).
-    - Restore highlights on load, with one retry and SPA URL watching.
-    - See-through highlight colour; `#ffe3bf` is unreadable on dark sites.
-  - Popup per the design; badge count.
+    - Classical button and toast (Undo / Change / View) in a closed shadow root.
+    - Marks are restored on load, again 2.5 s later, and after in-app navigation (Navigation API).
+    - See-through amber marker, and a "Restored N highlights" banner.
+  - `background.js`:
+    - Knows which page each tab shows, so the badge counts its notes and marks follow deletes, undo and pulls.
+    - A page may undo or refile only a note it saved in the last 10 minutes.
+    - Keeps the store in memory, and syncs again when a save lands during a pull.
+  - Popup per the design: the page's topic, note and section counts, sync state, auto-save switch, This page's notes
+    and Library. The auto-save setting moved to `chrome.storage.sync`.
+  - Changed from the plan:
+    - One `page.js` instead of three modules.
+    - View, This page's notes and Library open the extension's notes page until phase 5 adds `/library` and `/t/[id]`.
+    - Georgia stands in for Cormorant Garamond and Lora; the extension doesn't bundle fonts.
+  - **Browser check (about 10 min, after phase 3's):**
+    1. In this repo, `git switch phase-4`. In chrome://extensions, reload stickynotes, then reload open article tabs.
+    2. Save a passage on an article titled "X explained" or "A guide to X". The toast says "Saved to X", then
+       "Synced to your library", and the badge shows 1.
+    3. Reload the page. The passage is tinted again and "Restored 1 highlight from your last visit" shows.
+    4. Save on a second article on the same subject: it goes under the same topic.
+    5. Toast → Change → pick or type a topic. The toast says "Saved to <that topic>"; the notes page agrees.
+    6. Toast → Undo on a fresh save: the tint and the note go, and the badge drops.
+    7. On a dark site the tint is readable. On YouTube, open another video without reloading and save: the note
+       goes under that video.
+    8. Then merge `phase-3`, then `phase-4`, into main.
 - [ ] **5. Web library.**
   - `/library`: topic cards, client-side search.
   - `/t/[id]`: merged sections, `[n]` source markers, Sources list, rename, delete, copy MD, move source, merge, delete bullet.
@@ -133,7 +158,7 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
   - Google consent screen to Production: privacy/terms URLs, prod origin and redirect URI.
   - Chrome Web Store (`<all_urls>` justification), then Edge.
 
-## Bugs in the v1 extension to fix in the port
+## Bugs in the v1 extension (fixed: the 1st, 2nd and 4th in phase 3, the rest in phase 4)
 - `content.js:11` drops the query string, so HN `item?id=` and YouTube `watch?v=` pages collapse into one note.
 - `content.js:92-102`: every tab read-modify-writes one `pages` blob, so concurrent saves can be lost.
 - `popup.js:4` works out the page key separately from the content script.
@@ -180,3 +205,8 @@ prod origin and `https://<domain>/api/auth/callback/google` to the Google OAuth 
 - Each sign-in makes one tokeninfo round-trip to Google.
 - The refresh rate limit is keyed by IP behind the Next server.
 - Two tabs refreshing at the same moment can send one of them to `/signin`.
+- Marks are found again by their text plus 32 characters either side. Passages inside iframes or other shadow roots,
+  or selections that cross hidden text, aren't restored; the note itself is kept.
+- Change leaves the old topic in place with no notes. Topic matching skips it; the web library should hide or delete
+  empty topics (phase 5).
+- Tabs that were open before the extension was installed or reloaded need a reload before they can save.

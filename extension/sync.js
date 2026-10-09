@@ -21,6 +21,17 @@
     store.outbox.push({ ...action, seq: ++store.seq });
   }
 
+  /** The topic with this title, or a new one queued for the server. */
+  function topicNamed(store, title, uuid) {
+    let topic = Object.values(store.topics).find((t) => sameTitle(t.title, title));
+    if (!topic) {
+      topic = { id: uuid(), title };
+      store.topics[topic.id] = topic;
+      queue(store, { type: 'create_topic', id: topic.id, title });
+    }
+    return topic;
+  }
+
   /** Saves a passage and queues it for the server. Returns { highlight, topic }, or
    *  null when the page already has this exact text. A page saved from before keeps
    *  its topic; otherwise the topic is found by title, or made. */
@@ -30,12 +41,7 @@
 
     const title = (input.topicTitle || input.pageTitle || url).trim().slice(0, 300);
     let source = store.sources[url];
-    let topic = (source && store.topics[source.topic_id]) || Object.values(store.topics).find((t) => sameTitle(t.title, title));
-    if (!topic) {
-      topic = { id: uuid(), title };
-      store.topics[topic.id] = topic;
-      queue(store, { type: 'create_topic', id: topic.id, title });
-    }
+    const topic = (source && store.topics[source.topic_id]) || topicNamed(store, title, uuid);
     if (!source) {
       source = { url, topic_id: topic.id, title: input.pageTitle || title, site: input.site || '' };
       store.sources[url] = source;
@@ -62,6 +68,26 @@
     queue(store, { type: 'delete_highlight', id });
     if (!Object.values(store.highlights).some((x) => x.url === h.url)) delete store.sources[h.url];
     return true;
+  }
+
+  /** Files a page, with all its notes, under the topic with this title (made if
+   *  need be) and queues the move. Returns the topic, or null for an unknown page.
+   *  The topic it leaves stays, empty; topic matching skips empty topics. */
+  function moveSource(store, url, title, uuid) {
+    const source = store.sources[url];
+    if (!source) return null;
+    const topic = topicNamed(store, title.trim().slice(0, 300), uuid);
+    if (source.topic_id !== topic.id) {
+      source.topic_id = topic.id;
+      queue(store, { type: 'move_source', url, topic_id: topic.id });
+    }
+    return topic;
+  }
+
+  /** A page's notes, oldest first. */
+  function notesFor(store, url) {
+    return Object.values(store.highlights).filter((h) => h.url === url)
+      .sort((a, b) => a.created_at.localeCompare(b.created_at));
   }
 
   /** Applies the server's topic merges (client id → the id that won) to the store
@@ -145,5 +171,7 @@
     return inputs;
   }
 
-  exports.SN = { emptyStore, addHighlight, removeHighlight, applyTopicIds, nextBatch, ack, applyPull, toBackup, backupToInputs };
+  exports.SN = {
+    emptyStore, addHighlight, removeHighlight, moveSource, notesFor, applyTopicIds, nextBatch, ack, applyPull, toBackup, backupToInputs,
+  };
 })(typeof module !== 'undefined' ? module.exports : globalThis);

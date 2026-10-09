@@ -10,7 +10,7 @@ async function render() {
       const sources = Object.values(store.sources)
         .filter((s) => s.topic_id === t.id)
         .map((s) => {
-          const all = HN.notesFor(store, s.url);
+          const all = SN.notesFor(store, s.url);
           const notes = !q || hit(t.title) || hit(s.title) ? all : all.filter((n) => hit(n.text) || hit(n.section));
           return { ...s, all, notes };
         })
@@ -31,6 +31,7 @@ async function render() {
     const count = t.sources.reduce((n, s) => n + s.notes.length, 0);
     const card = document.createElement('div');
     card.className = 'card';
+    card.id = t.id; // notes.html#<topic id> opens at this topic
     card.innerHTML = `
       <div class="row card-head">
         <div>
@@ -94,4 +95,4 @@ document.getElementById('importFile').onchange = async (e) => {
 
 search.addEventListener('input', render);
 chrome.storage.onChanged.addListener((c) => { if (c.store) render(); }); // live-updates while you read
-render();
+render().then(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
