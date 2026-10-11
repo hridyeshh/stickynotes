@@ -23,8 +23,11 @@ export default async function Library() {
       <main className="page">
         <h1 className="page-title">Your notes</h1>
         <div className="empty">
-          <div className="empty-title">No notes yet</div>
-          <p className="text-muted">Select a passage on any page and it will appear here.</p>
+          <div className="empty-title">Your notes are in the extension for now</div>
+          <p className="text-muted">
+            The web library is coming soon. To read your saved notes, click the stickynotes icon in your browser
+            toolbar, then All notes.
+          </p>
         </div>
       </main>
     </>
