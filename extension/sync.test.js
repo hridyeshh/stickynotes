@@ -45,6 +45,19 @@ test('applyTopicIds moves the store and queued actions to the merged id', () => 
   assert.equal(s.outbox.find((a) => a.type === 'create_highlight').topic_id, 'server-topic');
 });
 
+test('moveSource refiles a page under a topic found by title, or made', () => {
+  const s = SN.emptyStore();
+  const { topic } = SN.addHighlight(s, page(), uuid);
+  const lb = SN.moveSource(s, 'https://a.example/ring', 'Load balancing', uuid);
+  assert.notEqual(lb.id, topic.id);
+  assert.equal(s.sources['https://a.example/ring'].topic_id, lb.id);
+  assert.equal(SN.moveSource(s, 'https://a.example/ring', ' consistent HASHING ', uuid).id, topic.id, 'back, found by title');
+  assert.equal(SN.moveSource(s, 'https://a.example/ring', 'Consistent hashing', uuid).id, topic.id, 'already there: nothing queued');
+  assert.equal(SN.moveSource(s, 'https://elsewhere.example/', 'X', uuid), null);
+  assert.deepEqual(s.outbox.map((a) => a.type), ['create_topic', 'create_highlight', 'create_topic', 'move_source', 'move_source']);
+  assert.deepEqual(s.outbox[3], { type: 'move_source', url: 'https://a.example/ring', topic_id: lb.id, seq: 4 });
+});
+
 test('ack drops only what was sent, even with saves queued meanwhile', () => {
   const s = SN.emptyStore();
   SN.addHighlight(s, page(), uuid);

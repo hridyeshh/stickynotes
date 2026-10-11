@@ -4,28 +4,49 @@
   <meta charset="utf-8">
   <link rel="stylesheet" href="styles.css">
   <style>
-    body { width: 380px; padding: 14px; }
-    #notes { max-height: 360px; overflow: auto; margin: 10px 0; }
-    label { display: flex; gap: 6px; align-items: center; font-size: 13px; }
-    header { border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    footer { border-top: 1px solid var(--border); padding-top: 10px; justify-content: space-between; }
-    #account { margin-top: 10px; justify-content: space-between; }
+    body { width: 320px; }
+    header, section, footer { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    header { display: flex; align-items: center; gap: 10px; }
+    .brand { margin-right: auto; font: 600 19px "Cormorant Garamond", Georgia, serif; }
+    #who { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #initials { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border: 1px solid var(--accent);
+      border-radius: 50%; color: var(--accent-ink); font: 600 11px "Cormorant Garamond", Georgia, serif; }
+    .eyebrow { margin-bottom: 4px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+    #title { font: 600 20px/1.15 "Cormorant Garamond", Georgia, serif; }
+    #count { margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .status { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
+    .setting { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    footer { display: flex; gap: 8px; border-bottom: 0; }
+    footer button { flex: 1; }
+    #disconnect { display: block; margin: 0 16px 12px auto; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <header>
-    <h2 id="title">This page</h2>
-    <div class="muted" id="count"></div>
+    <span class="brand">stickynotes</span>
+    <span id="who" class="muted"></span>
+    <span id="initials" hidden></span>
+    <button id="connect" class="accent" hidden>Connect</button>
   </header>
-  <div id="notes"></div>
-  <footer class="row">
-    <label><input type="checkbox" id="auto"> Auto-save on select</label>
-    <div class="row">
-      <button id="copy">Copy MD</button>
-      <button id="all" class="primary">All notes</button>
+  <section>
+    <div class="eyebrow">This page</div>
+    <div id="title"></div>
+    <div id="count" class="muted"></div>
+    <div class="status muted"><span id="dot" class="dot"></span><span id="sync"></span></div>
+  </section>
+  <section class="setting">
+    <div>
+      <div>Auto-save selections</div>
+      <div class="muted">Save every selection without the button</div>
     </div>
+    <button id="auto" class="switch" role="switch" aria-checked="false" aria-label="Auto-save selections"><span></span></button>
+  </section>
+  <footer>
+    <button id="page" class="accent">This page's notes</button>
+    <button id="library">Library</button>
   </footer>
-  <div class="row muted" id="account"></div>
+  <button id="disconnect" class="link" hidden>Disconnect this browser</button>
   <script src="config.js"></script>
   <script src="sync.js"></script>
   <script src="shared.js"></script>

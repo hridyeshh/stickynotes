@@ -1,3 +1,4 @@
-::highlight(hn-saved) {
-  background-color: rgba(255, 214, 10, 0.45);
+/* Saved passages: a see-through amber, readable on light pages and dark ones. */
+::highlight(sn-saved) {
+  background-color: rgba(182, 130, 53, 0.3);
 }

@@ -15,12 +15,6 @@ const HN = {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   },
 
-  /** One page's notes, oldest first. */
-  notesFor(store, url) {
-    return Object.values(store.highlights).filter((h) => h.url === url)
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
-  },
-
   // Group notes by section, keeping the order sections first appeared in
   groupBySection(notes) {
     const map = new Map();
@@ -36,7 +30,7 @@ const HN = {
    *  the numbered Sources list. */
   topicToMarkdown(store, topicId) {
     const sources = Object.values(store.sources).filter((s) => s.topic_id === topicId);
-    const notes = sources.flatMap((s, i) => HN.notesFor(store, s.url).map((n) => ({ ...n, ref: i + 1 })));
+    const notes = sources.flatMap((s, i) => SN.notesFor(store, s.url).map((n) => ({ ...n, ref: i + 1 })));
     let md = `# ${store.topics[topicId]?.title || 'Notes'}\n\n`;
     for (const [sec, list] of HN.groupBySection(notes)) {
       if (sec) md += `## ${sec}\n\n`;

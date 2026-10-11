@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "stickynotes",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Select text on any page to keep it as a note, filed under its topic with every source listed.",
   "permissions": ["storage", "unlimitedStorage", "contextMenus", "alarms", "activeTab", "scripting"],
   "host_permissions": ["http://localhost:8080/*"],
@@ -9,7 +9,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["config.js", "content.js"],
+      "js": ["config.js", "page.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
