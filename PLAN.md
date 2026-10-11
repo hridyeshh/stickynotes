@@ -1,6 +1,6 @@
 # stickynotes — plan & status
 
-Read this first in a new session. Last updated 2026-10-09.
+Read this first in a new session. Last updated 2026-10-12.
 
 ## What it is
 A Chrome/Edge/Brave extension plus a web library. Select text on any page and it is saved as a bullet
@@ -72,7 +72,8 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
   - A local smoke test also passed: open redirects are blocked, the Google redirect carries PKCE S256 + state,
     and both callback error paths work.
   Pages: `/` landing (topic copy), `/signin`, `/privacy` and `/terms` (drafts), `/library` placeholder.
-- [~] **3. Sync end to end.** Built 2026-10-09 on branch `phase-3` in both repos (local commits, not pushed). The Go
+- [~] **3. Sync end to end.** Built 2026-10-09 on branch `phase-3` in both repos. Merged into `main` and pushed
+  2026-10-12 with phase 4; Railway deployed it and it booted clean. Steps 3–7 of the check below are still open. The Go
   integration test and the extension unit tests pass. The browser glue (bridge, popup, worker) is untested until the
   morning check below.
   - **Go:**
@@ -99,17 +100,20 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - The popup never got the tab's URL (content-script matches aren't host permissions), so it always said
       "No notes on this page yet". `activeTab` fixes that too.
     - A content script orphaned by a reload threw "Extension context invalidated". It now removes its button.
+  - Found 2026-10-12: a saved note never reached the account because the extension was never connected (no
+    `/extension/codes` call in the API log); unconnected saves wait in the outbox. The connect bridge was then checked
+    in a real headless Chrome: hello → challenge, and a bad code → "This connection attempt expired."
   - **Morning check (about 5 min):**
-    1. Run the backend from branch phase-3 (`make docker-up && make dev`) and the web (`npm run dev`).
+    1. Run the backend from `main` (`make docker-up && make dev`) and the web (`npm run dev`).
     2. chrome://extensions → Developer mode → Load unpacked → `stickynotes/extension`.
     3. Popup → Connect → sign in if asked. The page should say "Connected as …".
     4. Save a passage on any article: toast "Saved to …"; the popup lists it and shows "Syncing as …" with nothing waiting.
     5. Load and connect the extension in a second Chrome profile. Open its popup: the note appears.
     6. Delete the note in one profile, then open the other's popup: it is gone.
     7. Disconnect: the popup shows Connect. Connect again and the note comes back from the account.
-    8. Then merge `phase-3` into main in both repos. Pushing the backend's main deploys to Railway.
-- [~] **4. Topics + extension UX.** Built 2026-10-10 on branch `phase-4` of this repo (local commit, stacked on
-  `phase-3`; the backend needed no changes). `npm test` (17 tests) and lint pass. Headless Chrome ran `content.js` on
+    8. ~~Merge into main~~: done 2026-10-12.
+- [~] **4. Topics + extension UX.** Built 2026-10-10 on branch `phase-4` of this repo (stacked on `phase-3`; the
+  backend needed no changes). Merged into `main` 2026-10-12, before its browser check. `npm test` (17 tests) and lint pass. Headless Chrome ran `content.js` on
   a test page with `chrome.*` stubbed: it saved two passages (one across an `<em>`), found a repeated sentence's
   second copy by its anchor, and restored it on load. The real extension is untested until the check below.
   - `page.js`, one module in place of the plan's url/topic/anchor:
@@ -133,7 +137,7 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - View, This page's notes and Library open the extension's notes page until phase 5 adds `/library` and `/t/[id]`.
     - Georgia stands in for Cormorant Garamond and Lora; the extension doesn't bundle fonts.
   - **Browser check (about 10 min, after phase 3's):**
-    1. In this repo, `git switch phase-4`. In chrome://extensions, reload stickynotes, then reload open article tabs.
+    1. On `main`: in chrome://extensions, reload stickynotes, then reload open article tabs.
     2. Save a passage on an article titled "X explained" or "A guide to X". The toast says "Saved to X", then
        "Synced to your library", and the badge shows 1.
     3. Reload the page. The passage is tinted again and "Restored 1 highlight from your last visit" shows.
@@ -142,7 +146,7 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     6. Toast → Undo on a fresh save: the tint and the note go, and the badge drops.
     7. On a dark site the tint is readable. On YouTube, open another video without reloading and save: the note
        goes under that video.
-    8. Then merge `phase-3`, then `phase-4`, into main.
+    8. ~~Merge into main~~: done 2026-10-12.
 - [ ] **5. Web library.**
   - `/library`: topic cards, client-side search.
   - `/t/[id]`: merged sections, `[n]` source markers, Sources list, rename, delete, copy MD, move source, merge, delete bullet.
@@ -184,7 +188,7 @@ service. Variables:
 Health check path `/health`. Migrations run on boot. Redis is not needed (no cache, and the in-memory
 rate limit is fine on one instance); add it with httprate-redis only when running more than one replica.
 
-Status 2026-10-09: Railway project `diplomatic-truth` (auto-named) has `stickynotes-backend` (deploys from
+Status 2026-10-12: `main` with phase 3 deployed (9d37fc32) and booted. Railway project `diplomatic-truth` (auto-named) has `stickynotes-backend` (deploys from
 GitHub `main` via Railpack) and `Postgres` (private network only). `stickynotes-backend/` is `railway link`ed.
 The three variables are set, and the backend boots against Postgres with migrations applied. Redis was skipped
 again on 2026-10-09. Still to do:
