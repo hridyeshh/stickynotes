@@ -213,8 +213,23 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({ id: 'hn-save', title: 'Save to notes', contexts: ['selection'] });
 });
 
-const askTabToSave = (tabId) =>
-  chrome.tabs.sendMessage(tabId, { type: 'save-selection' }).catch(() => {});
+// Chrome only runs content scripts in pages loaded after the extension, so a tab
+// open since before it was installed, reloaded or updated has none listening. The
+// menu click or Alt+S grants activeTab, which lets us put one in and ask again.
+async function askTabToSave(tabId) {
+  const ask = () => chrome.tabs.sendMessage(tabId, { type: 'save-selection' });
+  try {
+    await ask();
+  } catch {
+    try {
+      await chrome.scripting.insertCSS({ target: { tabId }, files: ['content.css'] });
+      await chrome.scripting.executeScript({ target: { tabId }, files: ['config.js', 'content.js'] });
+      await ask();
+    } catch (e) {
+      console.warn("stickynotes: can't save on this page:", e.message); // chrome:// pages, the Web Store
+    }
+  }
+}
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'hn-save' && tab?.id) askTabToSave(tab.id);

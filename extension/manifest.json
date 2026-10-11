@@ -3,7 +3,7 @@
   "name": "stickynotes",
   "version": "0.3.0",
   "description": "Select text on any page to keep it as a note, filed under its topic with every source listed.",
-  "permissions": ["storage", "unlimitedStorage", "contextMenus", "alarms"],
+  "permissions": ["storage", "unlimitedStorage", "contextMenus", "alarms", "activeTab", "scripting"],
   "host_permissions": ["http://localhost:8080/*"],
   "background": { "service_worker": "background.js" },
   "content_scripts": [

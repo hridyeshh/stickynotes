@@ -1,4 +1,8 @@
 (() => {
+  // background.js may inject this into a page that runs it already (askTabToSave).
+  if (globalThis.snContent) return;
+  globalThis.snContent = true;
+
   const MIN_LEN = 3;
   const MAX_LEN = 10000; // the server's limit
   let autoSave = false;
@@ -81,6 +85,10 @@
     return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable);
   }
 
+  // An extension reload or update orphans this script: the page keeps running it,
+  // but chrome.* is gone and its calls throw instead of rejecting.
+  const send = async (msg) => chrome.runtime.sendMessage(msg);
+
   // ---- Save. The background worker files it, so tabs never overwrite each other. ----
   async function saveSelection() {
     hideBtn();
@@ -92,7 +100,7 @@
 
     const range = sel.getRangeAt(0).cloneRange();
     const title = pageHeading();
-    const res = await chrome.runtime.sendMessage({
+    const res = await send({
       type: 'save',
       // ponytail: the topic is the page heading until phase 4's topic matcher.
       input: { url: pageUrl(), pageTitle: title, site: location.hostname, topicTitle: title, text, section: sectionHeading(range.startContainer) || '' },
@@ -110,6 +118,7 @@
   btn.addEventListener('click', saveSelection);
 
   document.addEventListener('mouseup', (e) => {
+    if (!chrome.runtime?.id) return host.remove(); // orphaned (see send): a fresh copy takes over
     if (e.composedPath().includes(host)) return;
     setTimeout(() => {
       const sel = window.getSelection();
@@ -135,7 +144,7 @@
   if (location.origin === SN_CONFIG.WEB_ORIGIN && window === window.top) {
     let started = false;
     const post = (msg) => window.postMessage(msg, SN_CONFIG.WEB_ORIGIN);
-    const ask = (msg) => chrome.runtime.sendMessage(msg).catch(() => ({ error: 'The extension was updated. Reload this page.' }));
+    const ask = (msg) => send(msg).catch(() => ({ error: 'The extension was updated. Reload this page.' }));
     window.addEventListener('message', async (e) => {
       if (e.source !== window || e.origin !== SN_CONFIG.WEB_ORIGIN || typeof e.data?.type !== 'string') return;
       if (e.data.type === 'sn:hello' && !started) {

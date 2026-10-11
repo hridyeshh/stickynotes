@@ -92,6 +92,13 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - No v1 `pages` migration: there were no v1 notes to keep, and v1 backups still import via Restore.
     - No `launchWebAuthFlow` fallback; add it if the bridge proves flaky.
     - The topic is the page heading until phase 4's matcher.
+  - Fixed 2026-10-11, found in the morning check (checked in a real headless Chrome):
+    - Save to notes (menu or Alt+S) did nothing in a tab opened before the extension was loaded, reloaded or
+      updated, because Chrome gives such a tab no live content script. The worker now injects one first
+      (`activeTab` + `scripting`).
+    - The popup never got the tab's URL (content-script matches aren't host permissions), so it always said
+      "No notes on this page yet". `activeTab` fixes that too.
+    - A content script orphaned by a reload threw "Extension context invalidated". It now removes its button.
   - **Morning check (about 5 min):**
     1. Run the backend from branch phase-3 (`make docker-up && make dev`) and the web (`npm run dev`).
     2. chrome://extensions → Developer mode → Load unpacked → `stickynotes/extension`.
