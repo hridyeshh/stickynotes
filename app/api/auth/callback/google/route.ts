@@ -35,7 +35,11 @@ export async function GET(req: NextRequest) {
     return done("/signin?error=google");
   }
 
-  const session = await api<Session>("/api/v1/auth/google", { method: "POST", body: { id_token: google.id_token } }).catch((e) => {
+  const session = await api<Session>("/api/v1/auth/google", {
+    method: "POST",
+    body: { id_token: google.id_token },
+    userAgent: req.headers.get("user-agent"),
+  }).catch((e) => {
     console.error("api sign-in failed", e);
     return null;
   });

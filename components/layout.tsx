@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { signOut } from "@/app/actions";
-import type { User } from "@/lib/session";
+import type { Me } from "@/lib/data";
 
-export function Brand() {
+export function Brand({ href = "/" }: { href?: string }) {
   return (
-    <Link href="/" className="brand">
+    <Link href={href} className="brand">
       <span className="brand-mark" aria-hidden="true">s</span>
       <span className="brand-name">stickynotes</span>
     </Link>
@@ -20,7 +19,7 @@ export function SiteHeader() {
         <Link href="/#how">How it works</Link>
         <Link href="/#privacy">Privacy</Link>
         <Link href="/signin">Sign in</Link>
-        <Link href="/signin" className="btn btn-primary">Get started</Link>
+        <Link href="/signin?next=/onboarding" className="btn btn-primary">Get started</Link>
       </nav>
     </header>
   );
@@ -36,22 +35,30 @@ export function SiteFooter() {
   );
 }
 
-/** Header for signed-in pages. Sign out moves to Settings in phase 5. */
-export function AppHeader({ user }: { user: User }) {
+/** Header for signed-in pages, with whether an extension is connected. */
+export function AppHeader({ user, current }: { user: Me; current?: "library" | "settings" }) {
+  const here = (page: string) => (current === page ? "page" : undefined);
   return (
     <header className="app-header">
-      <Brand />
+      <Brand href="/library" />
       <nav className="app-nav">
-        <Link href="/library" aria-current="page">Library</Link>
+        <Link href="/library" aria-current={here("library")}>Library</Link>
+        <Link href="/settings" aria-current={here("settings")}>Settings</Link>
       </nav>
-      <span className="avatar" title={user.email}>{initials(user.name || user.email)}</span>
-      <form action={signOut}>
-        <button className="btn btn-ghost">Sign out</button>
-      </form>
+      {user.extension_seen_at ? (
+        <span className="sync-pill" title="Notes you save in the browser show up here">
+          <span className="dot dot-on" aria-hidden="true" />Extension connected
+        </span>
+      ) : (
+        <Link href="/onboarding" className="sync-pill">
+          <span className="dot" aria-hidden="true" />Connect the extension
+        </Link>
+      )}
+      <Link href="/settings" className="avatar" title={user.email} aria-label="Settings">{initials(user.name || user.email)}</Link>
     </header>
   );
 }
 
-function initials(name: string) {
+export function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
 }

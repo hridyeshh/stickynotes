@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "oxlint && { grep -rnE '#[0-9a-fA-F]{3,8}\\b|\\b[0-9]+px\\b' app components --include='*.tsx'; test $? = 1; }",
-    "test": "node --test lib/session.test.ts extension/sync.test.js extension/page.test.js extension/background.test.js"
+    "test": "node --test lib/session.test.ts lib/notes.test.ts extension/sync.test.js extension/page.test.js extension/background.test.js"
   },
   "dependencies": {
     "lucide-react": "^0.553.0",

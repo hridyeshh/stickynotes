@@ -147,14 +147,44 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     7. On a dark site the tint is readable. On YouTube, open another video without reloading and save: the note
        goes under that video.
     8. ~~Merge into main~~: done 2026-10-12.
-- [ ] **5. Web library.**
-  - `/library`: topic cards, client-side search.
+- [~] **5. Web library.** Built 2026-10-12 on `main` in both repos, uncommitted (the user commits). `make test`
+  (TestLibrary added), `npm test` (23), lint and tsc pass. A real headless Chrome with the extension loaded and a
+  throwaway account (deleted after) passed every page below, including connecting from /onboarding and the
+  extension pulling the account's notes. Your browser check is below.
+  - `/library`: topic cards, latest first, client-side search; topics with no notes left are hidden.
   - `/t/[id]`: merged sections, `[n]` source markers, Sources list, rename, delete, copy MD, move source, merge, delete bullet.
   - Share dialog plus `/s/[slug]`: SSR, noindex, OG tags, 12-character slug.
   - `/settings`: account, devices (from refresh_tokens) with disconnect, export MD/JSON, delete account.
   - `/onboarding`: bridge shows Added / Connected.
   - `/sample` article.
-  - Add the new routes to the middleware matcher.
+  - The new routes are in the middleware matcher; `/s` and `/sample` are public.
+  - **Go:**
+    - `GET /library` returns every live topic, source and note.
+    - `GET /shared/{slug}` is public.
+    - `POST /topics/{id}/share`.
+    - `GET /devices` and `DELETE /devices/{id}`.
+    - `/me` adds `extension_seen_at`.
+    - Push gains `rename_topic`, `delete_topic` and `merge_topic`. All web edits go through `/sync/push`, so the
+      extension picks them up on its next pull.
+  - **Extension:** the bridge answers `sn:ping` (onboarding's "Added"). When connected with nothing waiting to sync,
+    "This page's notes", Library and the toast's View open the web library.
+  - Changed from the plan:
+    - Going private kills a share link for good; sharing again makes a new one. The share page shows the owner's
+      name, and the dialog says so.
+    - A note saved offline into a topic that was since deleted or merged brings that topic back.
+    - Sign-in now sends the browser's user agent so Settings can name devices. Older sessions show "A web browser".
+    - Settings can't mark "this browser": the access token doesn't say which session it belongs to.
+    - Onboarding has no Chrome Web Store link until phase 7. "Suggest tags" waits for phase 6.
+  - **Browser check (about 10 min):**
+    1. The API on :8080 was restarted with this code. chrome://extensions → reload stickynotes, then reload open tabs.
+    2. `/library`: your topics show, newest first, and search narrows them.
+    3. Open a topic. Rename it, copy it as Markdown, delete a note, and move a source to a new topic. Open the
+       extension's popup: it shows the same after syncing.
+    4. Share → Anyone with the link → Copy link. Open it in a private window: it is readable while signed out. Set
+       the topic back to Private: the link gives 404.
+    5. Merge a topic into another; then delete a topic you don't need.
+    6. `/settings`: devices are listed and both exports download. Don't try Delete account on your real account.
+    7. `/onboarding` on a browser with the extension shows Added, then Connected.
 - [ ] **6. Tags + AI (optional).** Tags and filter chips; suggestions and a topic-match fallback via the Claude API
   from Go. It sends note text to a third party, so disclose it and default it off.
 - [ ] **7. Ship.**
@@ -201,6 +231,7 @@ prod origin and `https://<domain>/api/auth/callback/google` to the Google OAuth 
 ## Known limits (marked with ponytail comments in the code)
 - The extension store is one storage key, rewritten on every save. Split it per record if stores reach many MB.
 - A first pull sends every live note in one response. Page it past tens of thousands of highlights.
+- The web library (`GET /library`) also loads every note at once; same ceiling, same fix.
 - If the extension's worker stops between the API rotating its refresh token and storing the new one, the
   extension has to be connected again.
 - For production, set the origins in `extension/config.js` and the API origin in the manifest's host_permissions.

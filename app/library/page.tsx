@@ -1,34 +1,46 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Download } from "lucide-react";
 import { AppHeader } from "@/components/layout";
-import { api, ApiError } from "@/lib/api";
-import { ACCESS_COOKIE, type User } from "@/lib/session";
+import { load, type Me } from "@/lib/data";
+import { libraryCards, plural, type Library as LibraryData } from "@/lib/notes";
+import { LibraryList } from "./library";
 
 export const metadata = { title: "Your notes · stickynotes" };
 
-// Phase 2 placeholder: proves sign-in end to end. Topics arrive in phase 5.
 export default async function Library() {
-  const token = (await cookies()).get(ACCESS_COOKIE)?.value;
-  let user: User;
-  try {
-    user = await api<User>("/api/v1/me", { token });
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401) redirect("/signin");
-    throw e;
-  }
+  const [me, lib] = await Promise.all([load<Me>("/api/v1/me"), load<LibraryData>("/api/v1/library")]);
+  // oxlint-disable-next-line react/purity -- a server component renders once per request
+  const cards = libraryCards(lib, Date.now());
+  const notes = cards.reduce((n, c) => n + c.noteCount, 0);
+  const pages = cards.reduce((n, c) => n + c.sourceCount, 0);
 
   return (
     <>
-      <AppHeader user={user} />
+      <AppHeader user={me} current="library" />
       <main className="page">
-        <h1 className="page-title">Your notes</h1>
-        <div className="empty">
-          <div className="empty-title">Your notes are in the extension for now</div>
-          <p className="text-muted">
-            The web library is coming soon. To read your saved notes, click the stickynotes icon in your browser
-            toolbar, then All notes.
-          </p>
+        <div className="page-head">
+          <div>
+            <h1 className="page-title">Your notes</h1>
+            {cards.length > 0 && (
+              <div className="page-meta">{plural(cards.length, "topic")} · {plural(notes, "note")} from {plural(pages, "page")}</div>
+            )}
+          </div>
+          {cards.length > 0 && (
+            <a href="/export?format=md" className="btn btn-secondary"><Download size={15} aria-hidden="true" />Export all</a>
+          )}
         </div>
+        {cards.length ? (
+          <LibraryList cards={cards} />
+        ) : (
+          <div className="empty">
+            <div className="empty-title">No notes yet</div>
+            <p className="text-muted">Select a passage on any page and it appears here, filed under its topic.</p>
+            <div className="row-actions">
+              <Link href="/sample" className="btn btn-primary">Open the sample article</Link>
+              {!me.extension_seen_at && <Link href="/onboarding" className="btn btn-secondary">Set up the extension</Link>}
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

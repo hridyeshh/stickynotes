@@ -64,10 +64,13 @@
     chrome.tabs.create({ url });
     window.close();
   };
-  // ponytail: both open the extension's notes page until the web library (phase 5)
-  // has /library and /t/[id].
-  $('page').addEventListener('click', () => open(chrome.runtime.getURL(`notes.html#${topicId}`)));
-  $('library').addEventListener('click', () => open(chrome.runtime.getURL('notes.html')));
+  // The web library once this browser is connected and has nothing waiting to sync
+  // (an unsynced topic isn't there yet); the extension's own notes page otherwise.
+  const onWeb = async () => !!(await HN.getAuth()) && !(await HN.getStore()).outbox.length;
+  $('page').addEventListener('click', async () =>
+    open(await onWeb() ? `${SN_CONFIG.WEB_ORIGIN}/t/${topicId}` : chrome.runtime.getURL(`notes.html#${topicId}`)));
+  $('library').addEventListener('click', async () =>
+    open(await onWeb() ? `${SN_CONFIG.WEB_ORIGIN}/library` : chrome.runtime.getURL('notes.html')));
   $('connect').addEventListener('click', () => open(`${SN_CONFIG.WEB_ORIGIN}/extension/connect`));
   $('disconnect').addEventListener('click', async () => {
     if (!confirm('Disconnect this browser? Your notes stay in your stickynotes account.')) return;

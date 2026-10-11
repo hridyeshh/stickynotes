@@ -296,10 +296,12 @@ const handlers = {
     syncSoon();
     return { topic: topic.title };
   },
-  // ponytail: the extension's notes page until the web library (phase 5) has /t/[id].
+  // The topic in the web library once it has synced; the extension's notes page otherwise.
   async view({ url }) {
-    const topic = (await read()).sources[url]?.topic_id;
-    await chrome.tabs.create({ url: chrome.runtime.getURL('notes.html') + (topic ? `#${topic}` : '') });
+    const store = await read();
+    const topic = store.sources[url]?.topic_id;
+    const web = topic && (await getAuth()) && !store.outbox.length;
+    await chrome.tabs.create({ url: web ? `${WEB_ORIGIN}/t/${topic}` : chrome.runtime.getURL('notes.html') + (topic ? `#${topic}` : '') });
   },
   async 'connect:start'(msg, sender) {
     allow(fromWebApp(sender));

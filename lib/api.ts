@@ -11,12 +11,14 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T>(path: string, opts: { method?: string; token?: string; body?: unknown } = {}): Promise<T> {
+/** `userAgent` passes the browser's on at sign-in, so Settings can name the device. */
+export async function api<T>(path: string, opts: { method?: string; token?: string; body?: unknown; userAgent?: string | null } = {}): Promise<T> {
   const res = await fetch(API_URL + path, {
     method: opts.method ?? "GET",
     headers: {
       "Content-Type": "application/json",
       ...(opts.token ? { Authorization: `Bearer ${opts.token}` } : {}),
+      ...(opts.userAgent ? { "User-Agent": opts.userAgent } : {}),
     },
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
     cache: "no-store",

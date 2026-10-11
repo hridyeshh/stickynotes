@@ -455,7 +455,9 @@
     const post = (msg) => window.postMessage(msg, SN_CONFIG.WEB_ORIGIN);
     window.addEventListener('message', async (e) => {
       if (e.source !== window || e.origin !== SN_CONFIG.WEB_ORIGIN || typeof e.data?.type !== 'string') return;
-      if (e.data.type === 'sn:hello' && !started) {
+      if (e.data.type === 'sn:ping') {
+        post({ type: 'sn:ready' }); // the web app asking whether the extension is here
+      } else if (e.data.type === 'sn:hello' && !started) {
         started = true;
         const r = await send({ type: 'connect:start' });
         post(r.challenge ? { type: 'sn:challenge', challenge: r.challenge } : { type: 'sn:error', error: r.error });

@@ -35,6 +35,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Phase 5 adds /t, /settings and /onboarding.
-  matcher: ["/library/:path*", "/extension/:path*"],
+  // Every signed-in page. /s (shared topics) and /sample are public.
+  matcher: ["/library/:path*", "/extension/:path*", "/t/:path*", "/settings", "/onboarding", "/export"],
 };
