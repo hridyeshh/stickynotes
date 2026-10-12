@@ -7,11 +7,11 @@ export default function Terms() {
     <>
       <SiteHeader />
       <main className="legal">
-        <p className="kicker">Draft · last updated 9 October 2026</p>
+        <p className="kicker">Last updated 13 October 2026</p>
         <h1>Terms of use</h1>
 
         <h2>Your account</h2>
-        <p>You sign in with a Google account and are responsible for what happens under it.</p>
+        <p>You need to be at least 13 to use stickynotes. You sign in with a Google account and are responsible for what happens under it.</p>
 
         <h2>Your notes</h2>
         <p>What you save stays yours. You let us store it and show it to you, and to anyone you give a share link to.</p>
@@ -27,6 +27,9 @@ export default function Terms() {
 
         <h2>Changes</h2>
         <p>If these terms change, we&rsquo;ll update this page and the date above.</p>
+
+        <h2>Contact</h2>
+        <p><a href="mailto:hridyesh2309@gmail.com">hridyesh2309@gmail.com</a></p>
       </main>
       <SiteFooter />
     </>
