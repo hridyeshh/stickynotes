@@ -3,7 +3,9 @@
 
 export type Topic = { id: string; title: string; is_public: boolean; share_slug: string | null; created_at: string };
 export type Source = { id: string; topic_id: string; url: string; title: string; site: string };
-export type Highlight = { id: string; source_id: string; text: string; section: string; created_at: string };
+/** The highlighter colour a note was saved in. Older API responses have none: yellow. */
+export type Ink = "yellow" | "pink" | "blue" | "green";
+export type Highlight = { id: string; source_id: string; text: string; section: string; color?: Ink; created_at: string };
 export type Library = { topics: Topic[]; sources: Source[]; highlights: Highlight[] };
 export type Device = { id: string; client: string; user_agent: string; last_active: string };
 
@@ -140,7 +142,7 @@ export function toBackup(lib: Library) {
     const s = sources.get(h.source_id);
     if (!s) continue;
     pages[s.url] ??= { url: s.url, title: s.title, site: s.site, topic: topics.get(s.topic_id) ?? s.title, notes: [] };
-    pages[s.url].notes.push({ id: h.id, text: h.text, section: h.section, createdAt: Date.parse(h.created_at) });
+    pages[s.url].notes.push({ id: h.id, text: h.text, section: h.section, ...(h.color && { color: h.color }), createdAt: Date.parse(h.created_at) });
   }
   return pages;
 }

@@ -135,10 +135,14 @@ const syncSoon = () => sync().catch((e) => console.warn('stickynotes: sync faile
 // the toolbar badge counts its notes and its marks follow changes made elsewhere:
 // the popup, the notes page, another device. ----
 const getTabs = async () => (await chrome.storage.session.get('tabs')).tabs || {};
-const setTab = (tabId, url) => serial(async () => {
+// A tab holds the URLs its page answers to: the address notes are saved under first,
+// then aliases (its own address, under which notes from before phase 4 were saved).
+// Reporting one URL the tab already answers to keeps the aliases.
+const setTab = (tabId, urls) => serial(async () => {
   const tabs = await getTabs();
-  if (url) tabs[tabId] = url;
-  else delete tabs[tabId];
+  const next = [].concat(urls ?? []);
+  if (!next.length) delete tabs[tabId];
+  else if (!(next.length === 1 && [].concat(tabs[tabId] ?? []).includes(next[0]))) tabs[tabId] = next;
   await chrome.storage.session.set({ tabs });
 });
 
@@ -151,11 +155,12 @@ chrome.action.setBadgeTextColor({ color: '#ffffff' });
 async function refreshTabs(urls) {
   try {
     const [tabs, store] = await Promise.all([getTabs(), read()]);
-    for (const [id, url] of Object.entries(tabs)) {
-      if (urls && !urls.has(url)) continue;
-      const highlights = SN.notesFor(store, url);
+    for (const [id, value] of Object.entries(tabs)) {
+      const shown = [].concat(value);
+      if (urls && !shown.some((u) => urls.has(u))) continue;
+      const highlights = SN.notesFor(store, shown);
       badge(+id, highlights.length);
-      chrome.tabs.sendMessage(+id, { type: 'marks', url, highlights }).catch(() => {}); // closed, or not ours any more
+      chrome.tabs.sendMessage(+id, { type: 'marks', url: shown[0], highlights }).catch(() => {}); // closed, or not ours any more
     }
   } catch (e) {
     console.warn('stickynotes: could not update open pages:', e.message);
@@ -227,7 +232,7 @@ function allow(ok) {
 async function savedHere(id, sender) {
   const [store, tabs] = await Promise.all([read(), getTabs()]);
   const h = store.highlights[id];
-  allow(h && sender.tab && tabs[sender.tab.id] === h.url && Date.now() - Date.parse(h.created_at) < 10 * 60e3);
+  allow(h && sender.tab && [].concat(tabs[sender.tab.id] ?? []).includes(h.url) && Date.now() - Date.parse(h.created_at) < 10 * 60e3);
   return h;
 }
 
@@ -237,38 +242,81 @@ function topicsInUse(store) {
   return Object.values(store.topics).filter((t) => used.has(t.id));
 }
 
+/** The same, as titles, the one saved to most recently first. */
+function recentTopics(store) {
+  const last = {};
+  for (const h of Object.values(store.highlights)) {
+    const id = store.sources[h.url]?.topic_id;
+    if (store.topics[id] && (last[id] ?? '') < h.created_at) last[id] = h.created_at;
+  }
+  return Object.keys(last).sort((a, b) => last[b].localeCompare(last[a])).map((id) => store.topics[id].title);
+}
+
+// The topic you're reading in: saves on pages new to your notes go to it, whatever they're about, until you
+// pick another topic or stop saving for 3 hours.
+const STICKY = 3 * 3600e3;
+async function readingIn() {
+  const { current } = await chrome.storage.local.get('current');
+  return current && Date.now() - current.at < STICKY ? current : null;
+}
+const nowReadingIn = (topic) => chrome.storage.local.set({ current: { id: topic.id, title: topic.title, at: Date.now() } });
+
+/** Where a save on this page goes unless you pick a topic: the page's own topic if it has notes, else the
+ *  topic you're reading in, else one worked out from the page. */
+function destination(store, url, page, current) {
+  const own = store.topics[store.sources[url]?.topic_id];
+  if (own) return own.title;
+  if (current) return store.topics[current.id]?.title || current.title;
+  return PG.topicFor(page, topicsInUse(store)).title || PG.pageTitle(page) || url;
+}
+
 const str = (v, max) => String(v ?? '').slice(0, max);
+const pageOf = (p) => ({ h1: str(p?.h1, 300), title: str(p?.title, 300), site: str(p?.site, 300) });
 
 const handlers = {
-  async page({ url }, sender) {
-    allow(sender.tab && /^https?:\/\//.test(url));
-    await setTab(sender.tab.id, url);
-    const highlights = SN.notesFor(await read(), url);
+  // `also`: other addresses the page has had notes saved under (see setTab).
+  async page({ url, also }, sender) {
+    const web = (u) => typeof u === 'string' && /^https?:\/\//.test(u);
+    allow(sender.tab && web(url));
+    const urls = [...new Set([url, ...(Array.isArray(also) ? also.filter(web) : [])])];
+    await setTab(sender.tab.id, urls);
+    const highlights = SN.notesFor(await read(), urls);
     badge(sender.tab.id, highlights.length);
     return { highlights };
   },
+  // For the Save note bar: where a save here would go, the topics you could pick instead, and your last colour.
+  async plan({ url, page }, sender) {
+    allow(sender.tab && /^https?:\/\//.test(url));
+    const [s, current, { color }] = await Promise.all([read(), readingIn(), chrome.storage.local.get('color')]);
+    return { topic: destination(s, url, pageOf(page), current), topics: recentTopics(s), color: color || 'yellow' };
+  },
+  // input.topic: a topic picked on the bar. The whole page goes there, notes saved before included, and it becomes
+  // the topic you're reading in. input.color: one of SN.COLORS; without one, your last colour.
   async save({ input }, sender) {
     if (!/^https?:\/\//.test(input?.url) || typeof input.text !== 'string' || !input.text || input.text.length > 10000) {
       throw new Error('Nothing to save');
     }
-    const page = { h1: str(input.page?.h1, 300), title: str(input.page?.title, 300), site: str(input.page?.site, 300) };
+    const page = pageOf(input.page);
     const anchor = input.anchor && { prefix: str(input.anchor.prefix, 32), suffix: str(input.anchor.suffix, 32) };
+    const picked = str(input.topic, 300).trim();
+    const [current, { color: last }] = await Promise.all([readingIn(), chrome.storage.local.get('color')]);
     const r = await mutate((s) => {
       const same = Object.values(s.highlights).find((h) => h.url === input.url && h.text === input.text);
       if (same) return { duplicate: true, id: same.id, section: same.section };
-      const pageTitle = PG.pageTitle(page) || input.url;
+      if (picked) SN.moveSource(s, input.url, picked, () => crypto.randomUUID());
       const { highlight, topic } = SN.addHighlight(s, {
-        url: input.url, site: str(input.site, 255), pageTitle, topicTitle: PG.topicFor(page, topicsInUse(s)).title || pageTitle,
-        text: input.text, section: str(input.section, 300), anchor,
+        url: input.url, site: str(input.site, 255), pageTitle: PG.pageTitle(page) || input.url,
+        topicTitle: picked || destination(s, input.url, page, current),
+        text: input.text, section: str(input.section, 300), anchor, color: input.color || last,
       }, () => crypto.randomUUID());
-      return { id: highlight.id, topic: topic.title, section: highlight.section };
+      return { id: highlight.id, topic, section: highlight.section, color: highlight.color };
     });
     if (sender.tab) await setTab(sender.tab.id, input.url);
-    if (!r.duplicate) {
-      syncSoon();
-      refreshTabs(new Set([input.url]));
-    }
-    return r;
+    if (r.duplicate) return r;
+    await Promise.all([nowReadingIn(r.topic), chrome.storage.local.set({ color: r.color })]);
+    syncSoon();
+    refreshTabs(new Set([input.url]));
+    return { ...r, topic: r.topic.title };
   },
   async sync() {
     try {
@@ -286,13 +334,14 @@ const handlers = {
   },
   async topics({ id }, sender) {
     await savedHere(id, sender);
-    return { topics: topicsInUse(await read()).map((t) => t.title).sort((a, b) => a.localeCompare(b)) };
+    return { topics: recentTopics(await read()) };
   },
   async move({ id, title }, sender) {
     const h = await savedHere(id, sender);
     if (!str(title, 300).trim()) throw new Error('Name a topic.');
     const topic = await mutate((s) => SN.moveSource(s, h.url, str(title, 300), () => crypto.randomUUID()));
     if (!topic) throw new Error('This page has no notes any more.');
+    await nowReadingIn(topic); // Change is you switching topics
     syncSoon();
     return { topic: topic.title };
   },

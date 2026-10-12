@@ -6,11 +6,15 @@
 //   owner:      the account id it belongs to ('' before the first connect),
 //   topics:     { [id]: { id, title } },
 //   sources:    { [url]: { url, topic_id, title, site } },
-//   highlights: { [id]: { id, url, text, section, anchor, created_at } },
+//   highlights: { [id]: { id, url, text, section, anchor, color, created_at } },
 //   outbox:     actions for POST /sync/push, each with a local seq number,
 //   seq, cursor (from the last pull)
 // }
 (function (exports) {
+  // The highlighter colours a note can be saved in; the server knows the same four.
+  const COLORS = ['yellow', 'pink', 'blue', 'green'];
+  const colorOf = (c) => (COLORS.includes(c) ? c : 'yellow');
+
   function emptyStore() {
     return { owner: '', topics: {}, sources: {}, highlights: {}, outbox: [], seq: 0, cursor: '' };
   }
@@ -48,13 +52,13 @@
     }
     const at = new Date(input.createdAt || Date.now());
     const highlight = {
-      id: uuid(), url, text, section: input.section || '', anchor: input.anchor ?? null,
+      id: uuid(), url, text, section: input.section || '', anchor: input.anchor ?? null, color: colorOf(input.color),
       created_at: (isNaN(at) ? new Date() : at).toISOString(),
     };
     store.highlights[highlight.id] = highlight;
     queue(store, {
       type: 'create_highlight', id: highlight.id, topic_id: topic.id, url, page_title: source.title, site: source.site,
-      text, section: highlight.section, anchor: highlight.anchor, created_at: highlight.created_at,
+      text, section: highlight.section, anchor: highlight.anchor, color: highlight.color, created_at: highlight.created_at,
     });
     return { highlight, topic };
   }
@@ -86,7 +90,8 @@
 
   /** A page's notes, oldest first. */
   function notesFor(store, url) {
-    return Object.values(store.highlights).filter((h) => h.url === url)
+    const urls = new Set([].concat(url)); // one URL, or a page's address and its aliases
+    return Object.values(store.highlights).filter((h) => urls.has(h.url))
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
   }
 
@@ -136,7 +141,7 @@
     for (const h of res.highlights) {
       if (h.deleted) delete store.highlights[h.id];
       // ISO in UTC like local saves, so created_at strings sort correctly.
-      else store.highlights[h.id] = { id: h.id, url: h.url, text: h.text, section: h.section, anchor: h.anchor ?? null, created_at: new Date(h.created_at).toISOString() };
+      else store.highlights[h.id] = { id: h.id, url: h.url, text: h.text, section: h.section, anchor: h.anchor ?? null, color: colorOf(h.color), created_at: new Date(h.created_at).toISOString() };
     }
     store.cursor = res.cursor;
   }
@@ -147,7 +152,7 @@
     for (const h of Object.values(store.highlights)) {
       const s = store.sources[h.url] || { title: h.url, site: '' };
       pages[h.url] ??= { url: h.url, title: s.title, site: s.site, topic: store.topics[s.topic_id]?.title || s.title, notes: [] };
-      pages[h.url].notes.push({ id: h.id, text: h.text, section: h.section, createdAt: Date.parse(h.created_at) });
+      pages[h.url].notes.push({ id: h.id, text: h.text, section: h.section, color: h.color, createdAt: Date.parse(h.created_at) });
     }
     return pages;
   }
@@ -164,7 +169,7 @@
         if (!text) continue;
         inputs.push({
           url: p.url, pageTitle: title, site: String(p.site || ''), topicTitle: String(p.topic || title),
-          text, section: String(n.section || ''), createdAt: n.createdAt,
+          text, section: String(n.section || ''), color: n.color, createdAt: n.createdAt,
         });
       }
     }
@@ -172,6 +177,6 @@
   }
 
   exports.SN = {
-    emptyStore, addHighlight, removeHighlight, moveSource, notesFor, applyTopicIds, nextBatch, ack, applyPull, toBackup, backupToInputs,
+    COLORS, emptyStore, addHighlight, removeHighlight, moveSource, notesFor, applyTopicIds, nextBatch, ack, applyPull, toBackup, backupToInputs,
   };
 })(typeof module !== 'undefined' ? module.exports : globalThis);

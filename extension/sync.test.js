@@ -112,3 +112,21 @@ test('backups round-trip, v1 files import, non-web pages are skipped', () => {
   assert.deepEqual(SN.backupToInputs(null), []);
   assert.ok(SN.addHighlight(SN.emptyStore(), page({ createdAt: 'garbage' }), uuid), 'a bad date falls back to now');
 });
+
+test('notes keep their highlighter colour through the outbox, pulls and backups', () => {
+  const s = SN.emptyStore();
+  const pink = SN.addHighlight(s, page({ color: 'pink' }), uuid).highlight;
+  const odd = SN.addHighlight(s, page({ text: 'Second.', color: 'purple' }), uuid).highlight;
+  assert.deepEqual([pink.color, odd.color], ['pink', 'yellow'], 'an unknown colour is yellow');
+  assert.deepEqual(s.outbox.filter((a) => a.type === 'create_highlight').map((a) => a.color), ['pink', 'yellow']);
+
+  const pulled = SN.emptyStore();
+  SN.applyPull(pulled, {
+    topics: [], sources: [], cursor: 'c', highlights: [
+      { id: 'h1', url: 'https://a.example/', text: 'A', section: '', anchor: null, color: 'blue', created_at: '2026-10-12T08:00:00Z' },
+      { id: 'h2', url: 'https://a.example/', text: 'B', section: '', anchor: null, created_at: '2026-10-12T08:00:00Z' }, // from before colours
+    ],
+  });
+  assert.deepEqual([pulled.highlights.h1.color, pulled.highlights.h2.color], ['blue', 'yellow']);
+  assert.deepEqual(SN.backupToInputs(SN.toBackup(s)).map((i) => i.color), ['pink', 'yellow']);
+});

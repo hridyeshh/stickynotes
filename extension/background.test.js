@@ -83,6 +83,7 @@ test('a page may undo or refile only what it just saved; only extension pages de
   const { store } = w.areas.local;
   const rings = Object.values(store.topics).find((t) => t.title === 'Rings');
   assert.equal(store.sources['https://a.example/ring'].topic_id, rings.id);
+  assert.equal(w.areas.local.current.title, 'Rings', 'Change makes it the topic you are reading in');
   assert.deepEqual(store.outbox.map((x) => x.type), ['create_topic', 'create_highlight', 'create_topic', 'move_source']);
 
   assert.deepEqual(await w.send({ type: 'undo', id }, a), {});
@@ -95,4 +96,56 @@ test('a page may undo or refile only what it just saved; only extension pages de
   w.listeners.updated(1, { status: 'loading' });
   await w.settle();
   assert.deepEqual(Object.keys(w.areas.session.tabs), ['2'], 'a tab that navigates away is forgotten');
+});
+
+test('a page shows notes saved under its old address too, and keeps them after a new save', async () => {
+  const w = loadWorker();
+  const raw = 'https://video.example/watch?v=1&list=2&start=1'; // saved before phase 4
+  const canonical = 'https://video.example/watch?v=1&list=2'; // what the page files under now
+  const tab = page(1, raw);
+  await w.send(save(raw, 'A talk', 'An old passage.'), tab);
+  await w.settle();
+
+  const r = await w.send({ type: 'page', url: canonical, also: [canonical, raw, 'javascript:alert(1)'] }, tab);
+  assert.deepEqual(r.highlights.map((h) => h.text), ['An old passage.']);
+  assert.deepEqual(w.areas.session.tabs[1], [canonical, raw], 'tracked under both, never a non-web URL');
+
+  await w.send(save(canonical, 'A talk', 'A new passage.'), tab);
+  await w.settle();
+  assert.deepEqual(w.sent.at(-1).highlights.map((h) => h.text), ['An old passage.', 'A new passage.'], 'the new save repaints both');
+  assert.equal(w.badges[1], '2');
+});
+
+test('new pages go to the topic you are reading in until you pick another; notes keep their colour', async () => {
+  const w = loadWorker();
+  const ring = 'https://a.example/ring';
+  const bread = 'https://b.example/starter';
+  const rye = 'https://c.example/rye';
+  const plan = (url, h1, id) => w.send({ type: 'plan', url, page: { h1, title: '', site: '' } }, page(id, url));
+
+  assert.deepEqual(await plan(ring, 'Consistent hashing explained', 1), { topic: 'Consistent hashing', topics: [], color: 'yellow' });
+  await w.send(save(ring, 'Consistent hashing explained', 'Keys map onto a ring.'), page(1, ring));
+  await w.settle(); // saves a few ms apart, so "most recent" is clear
+
+  // A page about something else still goes to the topic you are reading in...
+  assert.equal((await plan(bread, 'Sourdough starters', 2)).topic, 'Consistent hashing');
+  const second = await w.send(save(bread, 'Sourdough starters', 'Feed it daily.'), page(2, bread));
+  assert.equal(second.topic, 'Consistent hashing');
+  await w.settle();
+
+  // ...until you pick one on the bar: the page moves there with its notes, in the colour you clicked.
+  const pick = save(bread, 'Sourdough starters', 'Discard half first.');
+  const third = await w.send({ ...pick, input: { ...pick.input, topic: 'Sourdough', color: 'pink' } }, page(2, bread));
+  assert.equal(third.topic, 'Sourdough');
+  const { store } = w.areas.local;
+  assert.equal(store.topics[store.sources[bread].topic_id].title, 'Sourdough');
+  assert.deepEqual([store.highlights[second.id].color, store.highlights[third.id].color], ['yellow', 'pink']);
+  assert.equal(store.outbox.at(-1).color, 'pink', 'the server gets the colour');
+
+  // The next page follows your pick, in your last colour; topics come most recent first.
+  assert.deepEqual(await plan(rye, 'Rye bread', 3), { topic: 'Sourdough', topics: ['Sourdough', 'Consistent hashing'], color: 'pink' });
+
+  // Three hours without a save let go: the page decides again.
+  w.areas.local.current.at -= 3 * 3600e3;
+  assert.equal((await plan(rye, 'Rye bread', 3)).topic, 'Rye bread');
 });

@@ -7,12 +7,9 @@ export const metadata = { title: "Connect the extension · stickynotes" };
 // this browser to the account.
 export default function ConnectExtension() {
   return (
-    <div className="auth-page">
+    <div className="auth-page setup-desk">
       <Brand />
-      <div className="auth-card">
-        <h1>Connect the extension</h1>
-        <Connect />
-      </div>
+      <Connect />
     </div>
   );
 }

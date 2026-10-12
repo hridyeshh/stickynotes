@@ -19,6 +19,7 @@ export default async function SignIn({ searchParams }: { searchParams: Promise<{
     <div className="auth-page">
       <Brand />
       <div className="auth-card">
+        <p className="hand auth-hello" aria-hidden="true">Dear reader,</p>
         <h1>Sign in</h1>
         <p className="text-muted">New here? The same steps create your account.</p>
         {error && (

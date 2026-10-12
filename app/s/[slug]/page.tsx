@@ -58,7 +58,7 @@ export default async function SharedTopic({ params }: Props) {
             {sec.name && <h2>{sec.name}</h2>}
             {sec.notes.map((n) => (
               <p key={n.id} className="bullet justify">
-                {n.text} <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
+                <mark className={`hl hl-${n.color ?? "yellow"}`}>{n.text}</mark> <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
               </p>
             ))}
           </section>

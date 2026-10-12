@@ -28,8 +28,8 @@
 
   async function render() {
     const [store, auth] = await Promise.all([HN.getStore(), HN.getAuth()]);
-    const notes = page?.url ? SN.notesFor(store, page.url) : [];
-    topicId = notes.length ? store.sources[page.url]?.topic_id ?? null : null;
+    const notes = page?.url ? SN.notesFor(store, page.also ?? page.url) : [];
+    topicId = notes.length ? store.sources[notes[0].url]?.topic_id ?? null : null;
     const sections = new Set(notes.map((n) => n.section).filter(Boolean)).size;
     if (!page?.url) {
       $('title').textContent = "Notes can't be saved here";

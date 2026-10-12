@@ -8,7 +8,7 @@ export const metadata = { title: "Get set up · stickynotes" };
 export default async function OnboardingPage() {
   const me = await load<Me>("/api/v1/me");
   return (
-    <div className="auth-page">
+    <div className="auth-page setup-desk">
       <Brand href="/library" />
       <Onboarding name={me.name} email={me.email} connected={!!me.extension_seen_at} />
     </div>

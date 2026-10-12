@@ -4,7 +4,7 @@ import type { Me } from "@/lib/data";
 export function Brand({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} className="brand">
-      <span className="brand-mark" aria-hidden="true">s</span>
+      <img className="brand-mark" src="/icon.png" alt="" width={26} height={26} />
       <span className="brand-name">stickynotes</span>
     </Link>
   );
@@ -16,10 +16,12 @@ export function SiteHeader() {
     <header className="site-header">
       <Brand />
       <nav className="site-nav">
-        <Link href="/#how">How it works</Link>
-        <Link href="/#privacy">Privacy</Link>
-        <Link href="/signin">Sign in</Link>
-        <Link href="/signin?next=/onboarding" className="btn btn-primary">Get started</Link>
+        <span className="site-links">
+          <Link href="/#how">How it works</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/signin">Sign in</Link>
+        </span>
+        <Link href="/signin?next=/onboarding" className="btn btn-sticker">Get started</Link>
       </nav>
     </header>
   );
@@ -28,9 +30,26 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <span>© 2026 stickynotes</span>
-      <Link href="/privacy">Privacy policy</Link>
-      <Link href="/terms">Terms</Link>
+      <div className="footer-top">
+        <p className="footer-line">Read the web.<br />Keep the parts that matter.</p>
+        <nav className="footer-links">
+          <Link href="/#how">How it works</Link>
+          <Link href="/privacy">Privacy policy</Link>
+          <Link href="/#faq">Questions</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/sample">Try it on a sample</Link>
+          <Link href="/signin">Sign in</Link>
+        </nav>
+      </div>
+      {/* textLength stretches the word to the footer's width whatever the font's metrics. */}
+      <svg className="footer-mark" viewBox="0 0 1000 250" aria-hidden="true">
+        <text className="footer-mark-lit" x="0" y="196" textLength="1000" lengthAdjust="spacingAndGlyphs">stickynotes</text>
+        <text x="0" y="192" textLength="1000" lengthAdjust="spacingAndGlyphs">stickynotes</text>
+      </svg>
+      <div className="footer-fine">
+        <span>© 2026 stickynotes</span>
+        <span>Nothing is sent until you save a note.</span>
+      </div>
     </footer>
   );
 }

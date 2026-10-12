@@ -97,7 +97,7 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
           {sec.notes.map((n) => (
             <div key={n.id} className="note-row">
               <p className="bullet note-text">
-                {n.text} <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
+                <mark className={`hl hl-${n.color ?? "yellow"}`}>{n.text}</mark> <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
               </p>
               <div className="note-side">
                 <span>{n.when}</span>

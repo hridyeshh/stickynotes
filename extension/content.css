@@ -1,4 +1,5 @@
-/* Saved passages: a see-through amber, readable on light pages and dark ones. */
-::highlight(sn-saved) {
-  background-color: rgba(182, 130, 53, 0.3);
-}
+/* Saved passages, in the colour they were saved in: see-through tints that read on light pages and dark ones. */
+::highlight(sn-yellow) { background-color: rgba(240, 196, 25, 0.38); }
+::highlight(sn-pink) { background-color: rgba(236, 100, 158, 0.3); }
+::highlight(sn-blue) { background-color: rgba(70, 145, 230, 0.3); }
+::highlight(sn-green) { background-color: rgba(80, 175, 80, 0.32); }

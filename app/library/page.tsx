@@ -17,7 +17,7 @@ export default async function Library() {
   return (
     <>
       <AppHeader user={me} current="library" />
-      <main className="page">
+      <main className="page page-library">
         <div className="page-head">
           <div>
             <h1 className="page-title">Your notes</h1>

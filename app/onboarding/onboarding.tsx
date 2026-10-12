@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
 import { createExtensionCode } from "@/app/actions";
 import { initials } from "@/components/layout";
+import { KICKERS, SetupBook, Tick } from "@/components/setup";
 import { connectExtension, findExtension } from "@/lib/bridge";
 
-const STEPS = 3;
+// The extension's Chrome Web Store page, once it has one (phase 7).
+const STORE_URL = process.env.NEXT_PUBLIC_EXTENSION_URL;
 
 /** Three steps: add the extension, connect it, try it on the sample article. */
 export function Onboarding({ name, email, connected }: { name: string; email: string; connected: boolean }) {
@@ -31,39 +32,37 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
     }
   }
 
+  const first = name.split(/\s+/)[0];
   return (
-    <div className="onboarding">
-      <div className="kicker onboarding-top">
-        <span>Welcome{name ? `, ${name.split(/\s+/)[0]}` : ""}</span>
-        <span>Step {step + 1} of {STEPS}</span>
-      </div>
-      <div className="onboarding-bars" aria-hidden="true">
-        {Array.from({ length: STEPS }, (_, i) => <span key={i} className={i <= step ? "on" : ""} />)}
-      </div>
+    <SetupBook hello={`Dear ${first || "reader"},`} step={step} done={[added === true, link.state === "done", false]} onStep={setStep}>
+      <p className="hand setup-kicker" aria-hidden="true">{KICKERS[step]}</p>
 
       {step === 0 && (
         <>
           <h1>Add stickynotes to your browser</h1>
-          <p className="onboarding-lede">
-            The extension does the saving. It works in Chrome, Edge and Brave, and it only reads a page when you select text on it.
+          <p className="setup-lede">
+            The extension does the saving. It works in Chrome, Edge and Brave, and it reads a page only when you select text on it.
           </p>
-          <div className="onboarding-card">
-            <span className="brand-mark brand-mark-lg" aria-hidden="true">s</span>
-            <div className="onboarding-what">
-              <div className="onboarding-name">stickynotes for Chrome</div>
-              <div className="settings-note">Can read and highlight text on sites you visit</div>
+          <div className="setup-slip">
+            <img className="brand-mark brand-mark-lg" src="/icon.png" alt="" width={44} height={44} />
+            <div className="setup-what">
+              <div className="setup-name">stickynotes for Chrome</div>
+              <div className="settings-note">Highlights text on the pages you read</div>
             </div>
             {added ? (
-              <span className="onboarding-done"><Check size={16} aria-hidden="true" />Added</span>
+              <span className="setup-done"><Tick />added</span>
+            ) : added === null ? (
+              <span className="settings-note">Looking for it…</span>
             ) : (
-              <button className="btn btn-primary" disabled={added === null} onClick={() => setAdded(null)}>
-                {added === null ? "Looking…" : "Check again"}
-              </button>
+              <span className="row-actions">
+                {STORE_URL && <a href={STORE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-sticker">Add to Chrome</a>}
+                {/* The extension says hello only to pages that load after it, so this page needs a reload to see it. */}
+                <button className="btn btn-secondary" onClick={() => location.reload()}>I&rsquo;ve added it</button>
+              </span>
             )}
           </div>
-          {/* ponytail: no store link until the Chrome Web Store listing exists (phase 7). */}
-          <p className="settings-note onboarding-fine">
-            {added === false && "We can't see the extension in this browser yet. Add it, then check again. "}
+          <p className="settings-note setup-fine">
+            {added === false && "Added it? Reload this page so it can say hello. "}
             Chrome asks to read site data because you can highlight on any page. Nothing is sent until you save a note.
           </p>
         </>
@@ -71,20 +70,20 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
 
       {step === 1 && (
         <>
-          <h1>Connect the extension to your account</h1>
-          <p className="onboarding-lede">
-            Notes you save in the browser then sync to your library, and edits made here show up in the extension.
+          <h1>Connect it to your account</h1>
+          <p className="setup-lede">
+            Notes you save in the browser then sync to your library, and changes you make here reach the extension.
           </p>
-          <div className="onboarding-card">
+          <div className="setup-slip">
             <span className="avatar avatar-lg" aria-hidden="true">{initials(name || email)}</span>
-            <div className="onboarding-what">
-              <div className="onboarding-name">{name || email}</div>
+            <div className="setup-what">
+              <div className="setup-name">{name || email}</div>
               <div className="settings-note">{email}</div>
             </div>
             {link.state === "done" ? (
-              <span className="onboarding-done"><Check size={16} aria-hidden="true" />Connected</span>
+              <span className="setup-done"><Tick />connected</span>
             ) : (
-              <button className="btn btn-primary" disabled={link.state === "busy"} onClick={connect}>
+              <button className="btn btn-sticker" disabled={link.state === "busy"} onClick={connect}>
                 {link.state === "busy" ? "Connecting…" : "Connect"}
               </button>
             )}
@@ -95,31 +94,31 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
 
       {step === 2 && (
         <>
-          <h1>Try it on a page</h1>
-          <p className="onboarding-lede">Open the sample article and save a sentence or two.</p>
-          <ol className="onboarding-tips">
-            <li>Select some text. A <em>Save note</em> button appears next to it.</li>
-            <li>Or press <kbd>Alt</kbd> + <kbd>S</kbd> to save without the mouse.</li>
+          <h1>Save your first note</h1>
+          <p className="setup-lede">Open the sample article and keep a sentence or two.</p>
+          <ol className="setup-tips">
+            <li><span>Select a sentence. A bar appears beside it: <em>Save note</em>, the colours, and the topic it goes to.</span></li>
+            <li><span>Or press <kbd>Alt</kbd> + <kbd>S</kbd> to save without the mouse.</span></li>
             <li>Reload the page. Your highlights come back.</li>
           </ol>
         </>
       )}
 
-      <div className="onboarding-nav">
+      <div className="setup-nav">
         <button className="btn btn-ghost" onClick={() => setStep(step - 1)} disabled={step === 0}>Back</button>
         <div className="row-actions">
-          {step < STEPS - 1 ? (
-            <button className="btn btn-primary" onClick={() => setStep(step + 1)}>
+          {step < 2 ? (
+            <button className="btn btn-secondary" onClick={() => setStep(step + 1)}>
               {(step === 0 ? added : link.state === "done") ? "Next" : "Skip for now"}
             </button>
           ) : (
             <>
               <Link href="/library" className="btn btn-secondary">Go to my library</Link>
-              <Link href="/sample" className="btn btn-primary">Open the sample article</Link>
+              <Link href="/sample" className="btn btn-sticker">Open the sample article</Link>
             </>
           )}
         </div>
       </div>
-    </div>
+    </SetupBook>
   );
 }
