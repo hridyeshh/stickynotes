@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Caveat, Cormorant_Garamond, Lora } from "next/font/google";
+import { SignedInFlag } from "@/components/signed-in";
+import { SIGNED_IN_COOKIE } from "@/lib/session";
 import "./classical.css";
 import "./site.css";
 
@@ -14,10 +16,21 @@ export const metadata: Metadata = {
   description: "Select a passage on any page and keep it as a note, filed under its topic with every source listed.",
 };
 
+// Public pages are static, the same for everyone, so their header carries links for both cases and CSS shows one
+// (.when-in / .when-out in site.css). This marks <html> before the first paint; SignedInFlag keeps it right after.
+const markSignedIn = `document.documentElement.toggleAttribute("data-signed-in",document.cookie.split("; ").includes("${SIGNED_IN_COOKIE}=1"))`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${heading.variable} ${body.variable} ${hand.variable}`}>
-      <body>{children}</body>
+    // The script adds an attribute React didn't render.
+    <html lang="en" className={`${heading.variable} ${body.variable} ${hand.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: markSignedIn }} />
+      </head>
+      <body>
+        {children}
+        <SignedInFlag />
+      </body>
     </html>
   );
 }

@@ -259,7 +259,7 @@
   .slice::after {
     --shade-in: max(0%, calc(sin(var(--a) + var(--bend) / 2) * -36%));
     --shade-out: max(0%, calc(sin(var(--a) - var(--bend) / 2) * -36%));
-    content: ""; position: absolute; inset: 0; pointer-events: none;
+    content: ""; position: absolute; inset: 0; pointer-events: none; will-change: transform; /* own layer: repainting it leaves the page alone */
     background: linear-gradient(var(--dir), color-mix(in srgb, var(--ink-shadow) var(--shade-in), transparent), color-mix(in srgb, var(--ink-shadow) var(--shade-out), transparent));
   }
   /* Pages sit a little inside the covers, flush at the spine. A back face shares its front's paper. */
@@ -274,10 +274,19 @@
   .book-base { transform: translateZ(-6px); }
   .book-board { position: absolute; inset: 0; display: block; transform: translateZ(-7px); }
   /* Shade a leaf as it lifts, and the gutter of every page. */
-  .book .face::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 32%, transparent), transparent 75%); opacity: calc(var(--t) * (1 - var(--t)) * 3); }
+  .book .face::after { content: ""; position: absolute; inset: 0; pointer-events: none; will-change: opacity; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 32%, transparent), transparent 75%); opacity: calc(var(--t) * (1 - var(--t)) * 3); }
   .book .page-in::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
   .book .face-back .page-in::before { background: linear-gradient(270deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
   .book .pg-name .page-in::before { display: none; }
+  /* Custom properties inherit, so every change to --p restyles everything under the stage, including all forty copies
+     of the page content. That content reads none of them: resetting the ones that move here lets the browser skip it.
+     ponytail: list kept by hand; a new per-frame variable belongs here too. */
+  .book .page-in {
+    --p: initial; --t: initial; --e: initial; --bend: initial; --a: initial; --tA: initial; --eA: initial; --eB: initial; --c: initial; --U: initial;
+    --t0: initial; --t1: initial; --t2: initial; --t3: initial; --t4: initial; --t5: initial;
+    --T0: initial; --T1: initial; --T2: initial; --T3: initial; --T4: initial; --T5: initial;
+    --u1: initial; --u2: initial; --u3: initial; --u4: initial; --u5: initial; --u6: initial;
+  }
   .stack-only { display: none; }
   .book-pencil { display: block; right: -4.6%; top: 22%; width: 5.4%; height: 62%; transform: translateZ(2px); filter: drop-shadow(3px 4px 3px color-mix(in srgb, var(--ink-shadow) 30%, transparent)); }
   .book-loop { --nb-c: var(--kraft); position: absolute; right: -5.4%; top: 31%; display: block; width: 7.4%; height: 11%; border-radius: 6px / 4px; transform: translateZ(3px); }

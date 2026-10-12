@@ -13,3 +13,6 @@ next-env.d.ts
 .vercel/
 
 .DS_Store
+
+# Web Store zips (scripts/pack-extension.sh)
+/dist

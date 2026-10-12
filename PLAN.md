@@ -37,6 +37,9 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
   - Go verifies the token via tokeninfo against an `aud` allowlist and upserts the user by Google `sub`.
   - Go returns a 15-minute JWT plus a 60-day refresh token (hashed, rotated, one per device).
   - The web keeps both in HttpOnly cookies `sn_access` / `sn_refresh`; `middleware.ts` refreshes them on protected routes.
+  - A readable `sn_in=1` cookie (no secret) rides along so the static public pages can show "Your library" instead of
+    Sign in: an inline script marks `<html data-signed-in>` before paint, and `components/signed-in.tsx` re-checks
+    after client navigations (signing out redirects without a page load). Added 2026-10-12.
   - No NextAuth, so there is one session instead of two.
 - **Connecting the extension (phase 3):** the website owns login.
   - Popup "Connect" opens `/extension/connect`.
@@ -172,11 +175,17 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - Railway: `railway domain` for the API (generated or `api.<domain>`).
     - Vercel: import the repo; set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL=<API origin>; add the domain.
     - Extension: both origins in `config.js`, the API origin in the manifest's host_permissions, version 1.0.0.
+      Done by `scripts/pack-extension.sh <api> <web> <version>` into `dist/` (gitignored), leaving the checked-in files
+      on localhost. Built 2026-10-12: `dist/stickynotes-1.0.0.zip` for the Railway API and `https://www.stickynotes.in` (the
+      apex 308s to www, and the extension matches the site origin exactly).
     - Google OAuth client: add the prod origin and `https://<domain>/api/auth/callback/google`. Verify the domain in
       Search Console, then move the consent screen to Production with the homepage, privacy and terms URLs.
+      Branding verified by Google 2026-10-12 (home page `https://www.stickynotes.in/`).
     - `/privacy` and `/terms`: a contact address on the domain; drop "Draft".
   - Needs the user:
-    - Store art: 1280×800 screenshots and a 440×280 promo tile.
+    - Store art: done 2026-10-12 in `brand/store/`: five 1280×800 screenshots (the bar, the topic picker, a topic
+      page, the library, highlights restored) and the 440×280 promo tile, all 24-bit PNG. The bar shots are the real
+      extension in Chrome on a plain blog page; the web shots use sample data.
   - Icons: done 2026-10-12.
     - The design is a yellow highlighter character on muted sky (candidate C1 of six from GPT Image 2.5 via Figma,
       chosen by the user). The source is `brand/stickynotes-icon.png` (1024).
@@ -260,11 +269,15 @@ GitHub `main` via Railpack) and `Postgres` (private network only). `stickynotes-
 The three variables are set, and the backend boots against Postgres with migrations applied. Redis was skipped
 again on 2026-10-09. Still to do:
 - `railway.json` sets the `/health` health check path from the next deploy (it was unset, so a crash-looping deploy showed SUCCESS).
-- Add a public domain (`railway domain`) once the web needs one.
+- Public domain: `https://stickynotes-backend-production.up.railway.app` (added 2026-10-12, port 8080; `/health` answers).
 
 **Web on Vercel** (phase 7): set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and API_URL=<Railway URL>. Add the
 prod origin and `https://<domain>/api/auth/callback/google` to the Google OAuth client. `NEXT_PUBLIC_EXTENSION_URL`
 (the Web Store page) is optional until the listing exists.
+
+Status 2026-10-12: deployed at `https://stickynotes-chi.vercel.app`. The domain is `stickynotes.in` (GoDaddy, bought
+2026-10-12); Vercel first had it typed as `stickynotes.ni`. Make the apex the primary domain, with www redirecting to
+it: the extension only talks to pages on its exact `WEB_ORIGIN`, `https://stickynotes.in`.
 
 Deploy the backend first when a migration ships: 000002 adds `highlights.color`. Older extensions send no colour
 and get yellow, so either order works, but the web shows colours only once the API returns them.

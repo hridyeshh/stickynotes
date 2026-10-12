@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-import { ACCESS_COOKIE, REFRESH_COOKIE } from "@/lib/session";
+import { ACCESS_COOKIE, REFRESH_COOKIE, SIGNED_IN_COOKIE } from "@/lib/session";
 
 type Result = { error?: string };
 
@@ -100,6 +100,7 @@ export async function deleteAccount(): Promise<Result> {
   const jar = await cookies();
   jar.delete(ACCESS_COOKIE);
   jar.delete(REFRESH_COOKIE);
+  jar.delete(SIGNED_IN_COOKIE);
   redirect("/");
 }
 
@@ -110,5 +111,6 @@ export async function signOut() {
   if (refresh) await api("/api/v1/auth/logout", { method: "POST", body: { refresh_token: refresh } }).catch(() => {});
   jar.delete(ACCESS_COOKIE);
   jar.delete(REFRESH_COOKIE);
+  jar.delete(SIGNED_IN_COOKIE);
   redirect("/");
 }

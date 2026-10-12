@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { api } from "@/lib/api";
-import { ACCESS_COOKIE, REFRESH_COOKIE, secondsLeft, sessionCookies, type Session } from "@/lib/session";
+import { ACCESS_COOKIE, REFRESH_COOKIE, SIGNED_IN_COOKIE, secondsLeft, sessionCookies, type Session } from "@/lib/session";
 
 // Runs only on pages that need a signed-in user (see matcher): keeps the access token
 // fresh and sends everyone else to /signin.
@@ -22,7 +22,10 @@ export async function middleware(req: NextRequest) {
 
   if (!access || secondsLeft(access) <= 0) {
     const next = req.nextUrl.pathname + req.nextUrl.search;
-    return NextResponse.redirect(new URL(`/signin?next=${encodeURIComponent(next)}`, req.url));
+    const res = NextResponse.redirect(new URL(`/signin?next=${encodeURIComponent(next)}`, req.url));
+    // Only the hint: the tokens stay, so a refresh that failed because the API was briefly down can still succeed.
+    res.cookies.delete(SIGNED_IN_COOKIE);
+    return res;
   }
   if (!fresh) return NextResponse.next();
 
