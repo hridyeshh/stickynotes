@@ -3,19 +3,18 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createExtensionCode } from "@/app/actions";
-import { initials } from "@/components/layout";
-import { KICKERS, SetupBook, Tick } from "@/components/setup";
+import { AvatarPicker } from "@/components/avatar-picker";
+import { AvatarImg } from "@/components/layout";
+import { AddToChrome, KICKERS, SetupBook, STORE_URL, Tick } from "@/components/setup";
 import { connectExtension, findExtension } from "@/lib/bridge";
+import { avatarOf } from "@/lib/notes";
 
-// The extension's Chrome Web Store page, once it has one (phase 7).
-const STORE_URL = process.env.NEXT_PUBLIC_EXTENSION_URL;
-
-/** Three steps: add the extension, connect it, try it on the sample article. */
-export function Onboarding({ name, email, connected }: { name: string; email: string; connected: boolean }) {
+/** Three steps: add the extension, connect it (and pick an avatar), try it on the sample article. */
+export function Onboarding({ name, email, avatar, connected }: { name: string; email: string; avatar?: string; connected: boolean }) {
   const [step, setStep] = useState(0);
   // null while looking. A connected extension is installed, so no need to look.
   const [added, setAdded] = useState<boolean | null>(connected || null);
-  const [link, setLink] = useState<{ state: "idle" | "busy" | "done" } | { state: "error"; error: string }>({ state: connected ? "done" : "idle" });
+  const [link, setLink] = useState<{ state: "idle" | "busy" | "done" } | { state: "error"; error: React.ReactNode }>({ state: connected ? "done" : "idle" });
 
   useEffect(() => {
     if (added === null) findExtension().then(setAdded);
@@ -28,7 +27,12 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
       setAdded(true);
       setLink({ state: "done" });
     } else {
-      setLink({ state: "error", error: "error" in r ? `${r.error} Reload this page to try again.` : "We couldn't find the extension in this browser. Add it, then reload this page." });
+      setLink({
+        state: "error",
+        error: "error" in r ? `${r.error} Reload this page to try again.` : (
+          <>We couldn&rsquo;t find the extension in this browser. <a href={STORE_URL} target="_blank" rel="noopener noreferrer">Add it from the Chrome Web Store</a>, then reload this page.</>
+        ),
+      });
     }
   }
 
@@ -55,7 +59,7 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
               <span className="settings-note">Looking for it…</span>
             ) : (
               <span className="row-actions">
-                {STORE_URL && <a href={STORE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-sticker">Add to Chrome</a>}
+                <AddToChrome />
                 {/* The extension says hello only to pages that load after it, so this page needs a reload to see it. */}
                 <button className="btn btn-secondary" onClick={() => location.reload()}>I&rsquo;ve added it</button>
               </span>
@@ -75,7 +79,7 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
             Notes you save in the browser then sync to your library, and changes you make here reach the extension.
           </p>
           <div className="setup-slip">
-            <span className="avatar avatar-lg" aria-hidden="true">{initials(name || email)}</span>
+            <span className="avatar avatar-lg" aria-hidden="true"><AvatarImg pick={avatar} seed={name || email} /></span>
             <div className="setup-what">
               <div className="setup-name">{name || email}</div>
               <div className="settings-note">{email}</div>
@@ -89,6 +93,11 @@ export function Onboarding({ name, email, connected }: { name: string; email: st
             )}
           </div>
           {link.state === "error" && <p className="form-error" role="alert">{link.error}</p>}
+          <div className="setup-avatar">
+            <p className="setup-name">Pick your avatar</p>
+            <p className="settings-note">It sits beside your name in your library and on topics you share. You can change it in Settings.</p>
+            <AvatarPicker current={avatarOf(avatar, name || email)} />
+          </div>
         </>
       )}
 

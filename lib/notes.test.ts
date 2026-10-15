@@ -1,6 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deviceLabel, libraryCards, libraryMarkdown, matches, timeAgo, toBackup, topicView, type Library } from "./notes.ts";
+import { AVATARS, avatarOf, deviceLabel, libraryCards, libraryMarkdown, matches, timeAgo, toBackup, topicView, type Library } from "./notes.ts";
+
+test("avatarOf keeps a pick, and gives everyone else the same one every time", () => {
+  assert.equal(avatarOf("owl", "Asha Rao"), "owl");
+  const given = avatarOf("", "Asha Rao");
+  assert.ok(AVATARS.some(([key]) => key === given));
+  assert.equal(avatarOf(undefined, "Asha Rao"), given);
+  assert.equal(avatarOf("a-retired-avatar", "Asha Rao"), given);
+});
 
 const now = Date.parse("2026-10-12T12:00:00Z");
 const lib: Library = {

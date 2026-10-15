@@ -157,3 +157,19 @@ export function deviceLabel(d: Pick<Device, "client" | "user_agent">): string {
   if (d.client === "extension") return where ? `stickynotes extension in ${where}` : "stickynotes extension";
   return where || "A web browser";
 }
+
+/** The avatars to pick from, painted as one set: public/avatars/<key>.webp. */
+export const AVATARS = [
+  ["cat", "Ginger cat"], ["corgi", "Corgi"], ["robot", "Robot"], ["curls", "Curls and glasses"],
+  ["black-cat", "Black cat"], ["beagle", "Beagle"], ["fox", "Fox"], ["bun", "Red bun and freckles"],
+  ["owl", "Owl"], ["frog", "Frog"], ["panda", "Panda"], ["bunny", "Bunny"],
+] as const;
+
+/** A reader's avatar: the one they picked or, until they pick, the one their name always lands on. */
+export function avatarOf(pick: string | undefined, seed: string): string {
+  const keys: readonly string[] = AVATARS.map(([key]) => key);
+  if (pick && keys.includes(pick)) return pick;
+  let h = 0;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return keys[h % keys.length];
+}

@@ -1,6 +1,6 @@
 # stickynotes — plan & status
 
-Read this first in a new session. Last updated 2026-10-12.
+Read this first in a new session. Last updated 2026-10-15.
 
 ## What it is
 A Chrome/Edge/Brave extension plus a web library. Select text on any page and it is saved as a bullet
@@ -181,8 +181,7 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - Google OAuth client: add the prod origin and `https://<domain>/api/auth/callback/google`. Verify the domain in
       Search Console, then move the consent screen to Production with the homepage, privacy and terms URLs.
       Branding verified by Google 2026-10-12 (home page `https://www.stickynotes.in/`).
-    - `/privacy` and `/terms`: done 2026-10-13. "Draft" dropped; contact hridyesh2309@gmail.com (the user's choice:
-      the domain has no mail). The policy now lists every field, cookie, log and provider, plus both Limited Use
+    - `/privacy` and `/terms`: done 2026-10-13. "Draft" dropped; contact contactus@paperboxd.in (since 2026-10-15). The policy now lists every field, cookie, log and provider, plus both Limited Use
       statements, and matches the store's privacy answers. Change them together.
   - Needs the user:
     - Store art: done 2026-10-12 in `brand/store/`: five 1280×800 screenshots (the bar, the topic picker, a topic
@@ -219,20 +218,36 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
 - The in-page button and toast use Georgia.
 - Added beyond the prototype: Sources list, Change-topic picker, Move/Merge dialogs.
 - The site was redesigned 2026-10-12 after Superr's site on Mobbin (superr.ai). The DS type and amber stay; the
-  rest is new. Everything is CSS/SVG except two generated paintings: the sign-in desk (`public/art/desk.jpg`) and
-  the setup desk (`public/art/setup.jpg`).
+  rest is new. Everything is CSS/SVG except four gouache paintings generated with GPT Image 2.5 via Figma: the
+  sign-in desk (`public/art/desk.jpg`), the setup desk (`public/art/setup.jpg`), and the landing's sky and hands
+  (`public/art/sky.jpg`, `public/art/hands.jpg`).
+  - **Order (2026-10-16):** story, sky, shelf, good hands, FAQ. Shelf books are 250–440px wide, as big as the
+    screen allows (a book's height is at most 100vh − 300px, room for its note and the header); the shelf is 440vh
+    tall so it slides about a pixel across for each pixel scrolled.
+  - **Two painted scenes around the shelf** (added 2026-10-15 from two references the user sent):
+    - Sky: hands hold up a tablet in a kraft folio showing the library shelf, beside an index card of what the
+      library does (I–V). From 1000px wide the card sits in the open sky; narrower screens crop to the tablet and
+      rest the card on the picture's bottom edge.
+    - Good hands: a kraft notebook passed between two hands, with privacy copy and a handwritten aside. The
+      painting's flat ground was lifted to the page grey (#f3f2f2), so it has no edges, and the arms enter only
+      from the sides, so narrow screens show the middle. "you" is written on its blank label in Caveat as it
+      scrolls up (CSS view timeline; static with reduced motion or without support).
   - **Landing, with motion (any screen):** the hero notebook stays on screen as you scroll. It straightens, grows and opens,
     then turns six spreads: welcome, select / files itself, ten articles / the merged note, sticky-note features /
     comes back, the privacy letter / the no-list, cool stuff / Get started.
-    - `components/scrolly.tsx` publishes scroll progress as `--p`. `app/landing.css` derives every transform from
-      it. Leaves stack by translateZ.
+    - Scroll-driven CSS animations on the story's view timeline, no script (2026-10-15; this replaced a JS `--p`
+      that restyled ~1,100 elements a frame). Only transform and opacity animate, so Chrome runs every one of them
+      on the compositor, in step with the scroll. Measured on the same scroll: desktop 38 → 60 fps, a 4×-throttled
+      phone 24 → 60 fps, paint 810 ms → 3 ms. Leaves stack by translateZ.
     - Paper leaves bend while turning: each is four hinged strips (`SoftLeaf`), and every hinge adds
-      `sin(2πt)·13°`. The free edge leads, then trails. Strips 2–4 repeat the page markup and are `aria-hidden`.
-      The kraft cover turns stiff.
-    - Phones and short screens show one page at a time: a camera (`--c`) reads the left page, slides to the right
-      one, then follows each turning page back. The hero copy stands on the notebook (`--hv`), its title always
-      three lines, so the gaps hold at any height.
-  - **Landing without motion** (reduced motion or no JS, set by a media query): the same pages stack like spreads.
+      `sin(2πt)·13°` (`leaf-bend`, quarter-sine eases). The free edge leads, then trails. Strips 2–4 repeat the
+      page markup and are `aria-hidden`. The kraft cover turns stiff. Each strip's shading is a flat shadow (its
+      hinge-side shade) plus a ramp to its outer edge's shade: exactly the old gradient, with only opacity moving.
+      The keyframe values were generated from those formulas; regenerate them if the bend or turn changes.
+    - Phones and short screens show one page at a time: the camera (`book-narrow` keyframes) reads the left page,
+      slides to the right one, then follows each turning page back. The hero copy stands on the notebook (`--hv`),
+      its title always three lines, so the gaps hold at any height.
+  - **Landing without motion** (reduced motion, or no scroll timelines, e.g. Firefox): the same pages stack like spreads.
     Then come a topic shelf (it slides sideways while you scroll, and is swiped without motion) and an FAQ.
   - **Shared props:**
     - Notebooks with a name label (`components/notebook.tsx`), sticky notes, die-cut stickers, a pencil, and
@@ -241,13 +256,25 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - A mechanical-pencil cursor, which steps aside for forced colours and high contrast.
   - **App pages:**
     - The library is a shelf of notebooks, coloured by topic id, each with its latest note on a sticky note.
-    - Topic and share pages are loose-leaf pages.
-    - Settings are index cards; sign-in is a nameplate card; dialogs sit on paper.
+    - Topic and share pages are one note sheet: cream paper, controls in a band over a double rule, then
+      handwriting on thin rules.
+    - Settings uses the prototype's layout, not paper (2026-10-16; the note sheet's handwriting hid its buttons):
+      each section's name and purpose on the left, then a row per account, device or download with its own
+      labelled button.
+    - Avatars instead of initials (2026-10-16): 12 painted ones (cats, dogs, a robot, people and more) in
+      `public/avatars`, sliced from one generated gouache sheet. Picked in Settings and in setup's connect step, and
+      saved as `users.avatar` (backend migration 000003, `PATCH /api/v1/me`). Until someone picks, `avatarOf` gives
+      them one from their name. Share pages show the author's. The extension popup still shows initials.
+    - A topic's "Save as PDF" (replaced "Copy as Markdown" 2026-10-16) opens the print dialog; print styles keep just
+      its notes, highlights and sources, without rules. No PDF library, so no one-click file download.
+    - Sign-in is a nameplate card; dialogs sit on paper.
     - Onboarding and the connect page are one setup notebook (`components/setup.tsx`) on their own desk: the steps
       are yellow, pink and blue sticky notes on the kraft inside cover, ticked off as you go, and the ruled page says
-      what to do now. "Add to Chrome" shows once `NEXT_PUBLIC_EXTENSION_URL` is set; "I've added it" reloads,
-      since the extension only greets pages loaded after it.
-  - **Footer and 404:** the public footer is an amber slab with the name pressed in. The 404 (`app/not-found.tsx`)
+      what to do now. "Add to Chrome" opens the store listing (`STORE_URL` in `components/setup.tsx`) in a new tab, on
+      onboarding and on the connect page when it can't find the extension; "I've added it" reloads, since the
+      extension only greets pages loaded after it.
+  - **Footer and 404:** the public footer is an amber slab with the name pressed in, and credits "a PaperBoxd
+    production" (links to paperboxd.in). The 404 (`app/not-found.tsx`)
     is a loose-leaf page with page 404 torn out at the binding: its stub keeps the first letters of each line.
   - **CTAs:** they say "Get started free" and go to sign-in until the Web Store listing exists (phase 7).
   - **Checked:** in headless Chrome at 1440, 1024, 490 and 390 wide; onboarding and connect through an unauthenticated

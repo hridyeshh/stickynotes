@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Caveat, Cormorant_Garamond, Lora } from "next/font/google";
+import { Caveat, Cormorant_Garamond, Lora, Playwrite_DK_Loopet } from "next/font/google";
 import { SignedInFlag } from "@/components/signed-in";
 import { SIGNED_IN_COOKIE } from "@/lib/session";
 import "./classical.css";
@@ -10,6 +10,8 @@ const heading = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "600"],
 const body = Lora({ subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"], variable: "--font-lora" });
 // The margin-note handwriting (.hand), on the landing page and the app alike.
 const hand = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
+// Joined handwriting for the notes on topic and share pages. Google lists no subsets for it, so next/font doesn't preload it.
+const script = Playwrite_DK_Loopet({ variable: "--font-loopet" });
 
 export const metadata: Metadata = {
   title: "stickynotes",
@@ -23,7 +25,7 @@ const markSignedIn = `document.documentElement.toggleAttribute("data-signed-in",
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // The script adds an attribute React didn't render.
-    <html lang="en" className={`${heading.variable} ${body.variable} ${hand.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${heading.variable} ${body.variable} ${hand.variable} ${script.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: markSignedIn }} />
       </head>

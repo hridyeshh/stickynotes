@@ -2,7 +2,7 @@ import { SiteFooter, SiteHeader } from "@/components/layout";
 
 export const metadata = { title: "Privacy policy · stickynotes" };
 
-const CONTACT = "hridyesh2309@gmail.com";
+const CONTACT = "contactus@paperboxd.in";
 const mail = <a href={`mailto:${CONTACT}`}>{CONTACT}</a>;
 
 // Keep this in step with the Chrome Web Store listing's privacy answers (PLAN.md, "Store listing draft").

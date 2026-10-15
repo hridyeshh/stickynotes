@@ -29,7 +29,7 @@ export default function Terms() {
         <p>If these terms change, we&rsquo;ll update this page and the date above.</p>
 
         <h2>Contact</h2>
-        <p><a href="mailto:hridyesh2309@gmail.com">hridyesh2309@gmail.com</a></p>
+        <p><a href="mailto:contactus@paperboxd.in">contactus@paperboxd.in</a></p>
       </main>
       <SiteFooter />
     </>

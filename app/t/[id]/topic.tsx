@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { ArrowLeft, Copy, ExternalLink, Globe, Lock, Merge, Pencil, Share2, Trash2, X } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Globe, Lock, Merge, Pencil, Share2, Trash2, X } from "lucide-react";
 import { deleteNote, deleteTopic, mergeTopic, moveSource, renameTopic, setShare } from "@/app/actions";
 import { Dialog } from "@/components/dialog";
-import { hostname, plural, toMarkdown, type NumberedSource, type Topic, type TopicView } from "@/lib/notes";
+import { hostname, plural, type NumberedSource, type Topic, type TopicView } from "@/lib/notes";
 
 type Other = { id: string; title: string };
 type Open = null | "share" | "delete" | "merge" | NumberedSource;
@@ -17,7 +17,6 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
   const [draft, setDraft] = useState("");
   const [into, setInto] = useState("");
   const [dest, setDest] = useState("");
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
@@ -40,97 +39,98 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
 
   return (
     <main className="page page-topic">
-      <Link href="/library" className="back"><ArrowLeft size={15} aria-hidden="true" />All notes</Link>
-      {sites && <div className="kicker topic-kicker">{sites}</div>}
-
-      {renaming ? (
-        <form className="rename" onSubmit={(e) => {
-          e.preventDefault();
-          run(() => renameTopic(topic.id, draft), () => setRenaming(false));
-        }}>
-          <input className="input rename-input" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300}
-            aria-label="Topic title" autoFocus onKeyDown={(e) => e.key === "Escape" && setRenaming(false)} />
-          <button className="btn btn-primary" disabled={pending || !draft.trim()}>Save</button>
-          <button type="button" className="btn btn-ghost" onClick={() => setRenaming(false)}>Cancel</button>
-        </form>
-      ) : (
-        <h1 className="topic-title">{topic.title}</h1>
-      )}
-      <div className="page-meta">
-        {view.noteCount ? `${plural(view.noteCount, "note")} from ${plural(view.sources.length, "source")} · last saved ${view.lastSaved}` : "No notes"}
-      </div>
-
-      <div className="toolbar">
-        <button className="btn btn-primary" onClick={() => show("share")}>
-          {topic.is_public ? <Globe size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
-          {topic.is_public ? "Shared" : "Share"}
-        </button>
-        <button className="btn btn-secondary" disabled={!view.noteCount} onClick={async () => {
-          await navigator.clipboard.writeText(toMarkdown(view));
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }}>
-          <Copy size={15} aria-hidden="true" />{copied ? "Copied" : "Copy as Markdown"}
-        </button>
-        <button className="btn btn-secondary" onClick={() => {
-          setDraft(topic.title);
-          setError("");
-          setRenaming(true);
-        }}>
-          <Pencil size={15} aria-hidden="true" />Rename
-        </button>
-        {others.length > 0 && (
-          <button className="btn btn-secondary" onClick={() => {
-            setInto(others[0].id);
-            show("merge");
-          }}>
-            <Merge size={15} aria-hidden="true" />Merge
+      <div className="sheet-band">
+        <Link href="/library" className="back"><ArrowLeft size={15} aria-hidden="true" />All notes</Link>
+        <div className="toolbar">
+          <button className="btn btn-primary" onClick={() => show("share")}>
+            {topic.is_public ? <Globe size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
+            {topic.is_public ? "Shared" : "Share"}
           </button>
-        )}
-        <button className="btn btn-danger" onClick={() => show("delete")}><Trash2 size={15} aria-hidden="true" />Delete</button>
+          {/* ponytail: the browser's print dialog saves the PDF (print styles in site.css keep just the notes); a
+              generated file would need a PDF library and embedded fonts. */}
+          <button className="btn btn-secondary" disabled={!view.noteCount} onClick={() => window.print()}>
+            <Download size={15} aria-hidden="true" />Save as PDF
+          </button>
+          <button className="btn btn-secondary" onClick={() => {
+            setDraft(topic.title);
+            setError("");
+            setRenaming(true);
+          }}>
+            <Pencil size={15} aria-hidden="true" />Rename
+          </button>
+          {others.length > 0 && (
+            <button className="btn btn-secondary" onClick={() => {
+              setInto(others[0].id);
+              show("merge");
+            }}>
+              <Merge size={15} aria-hidden="true" />Merge
+            </button>
+          )}
+          <button className="btn btn-danger" onClick={() => show("delete")}><Trash2 size={15} aria-hidden="true" />Delete</button>
+        </div>
       </div>
       {error && !open && <p className="form-error" role="alert">{error}</p>}
 
-      {view.sections.map((sec) => (
-        <section key={sec.name} className="topic-section">
-          {sec.name && <h2>{sec.name}</h2>}
-          {sec.notes.map((n) => (
-            <div key={n.id} className="note-row">
-              <p className="bullet note-text">
-                <mark className={`hl hl-${n.color ?? "yellow"}`}>{n.text}</mark> <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
-              </p>
-              <div className="note-side">
-                <span>{n.when}</span>
-                <button className="btn btn-icon btn-quiet" title="Delete note" aria-label="Delete note" disabled={pending}
-                  onClick={() => run(() => deleteNote(n.id))}>
-                  <X size={14} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </section>
-      ))}
-      {!view.noteCount && <p className="no-results">Every note in this topic has been moved or deleted.</p>}
+      <div className="ruled">
+        {sites && <p><span className="sheet-label">{sites}</span></p>}
+        {renaming ? (
+          <form className="rename" onSubmit={(e) => {
+            e.preventDefault();
+            run(() => renameTopic(topic.id, draft), () => setRenaming(false));
+          }}>
+            <input className="input rename-input" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300}
+              aria-label="Topic title" autoFocus onKeyDown={(e) => e.key === "Escape" && setRenaming(false)} />
+            <button className="btn btn-primary" disabled={pending || !draft.trim()}>Save</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setRenaming(false)}>Cancel</button>
+          </form>
+        ) : (
+          <h1 className="topic-title">{topic.title}</h1>
+        )}
+        <p>
+          <span className="sheet-label">
+            {view.noteCount ? `${plural(view.noteCount, "note")} from ${plural(view.sources.length, "source")} · last saved ${view.lastSaved}` : "No notes"}
+          </span>
+        </p>
 
-      {view.sources.length > 0 && (
-        <section className="sources" aria-labelledby="sources-title">
-          <h2 id="sources-title">Sources</h2>
-          <ol>
-            {view.sources.map((s) => (
-              <li key={s.id} id={`source-${s.n}`}>
-                <div className="source-what">
-                  <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}<ExternalLink size={12} aria-hidden="true" /></a>
-                  <div className="source-site">{s.site || hostname(s.url)} · {plural(notesFrom(s), "note")}</div>
+        {view.sections.map((sec) => (
+          <section key={sec.name} className="topic-section">
+            {sec.name && <h2>{sec.name}</h2>}
+            {sec.notes.map((n) => (
+              <div key={n.id} className="note-row">
+                <p className="bullet note-text">
+                  <mark className={`hl hl-${n.color ?? "yellow"}`}>{n.text}</mark> <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
+                </p>
+                <div className="note-side">
+                  <span>{n.when}</span>
+                  <button className="btn btn-icon btn-quiet" title="Delete note" aria-label="Delete note" disabled={pending}
+                    onClick={() => run(() => deleteNote(n.id))}>
+                    <X size={14} aria-hidden="true" />
+                  </button>
                 </div>
-                <button className="btn btn-ghost" onClick={() => {
-                  setDest("");
-                  show(s);
-                }}>Move</button>
-              </li>
+              </div>
             ))}
-          </ol>
-        </section>
-      )}
+          </section>
+        ))}
+        {!view.noteCount && <p className="no-results">Every note in this topic has been moved or deleted.</p>}
+
+        {view.sources.length > 0 && (
+          <section className="sources" aria-labelledby="sources-title">
+            <h2 id="sources-title">Sources</h2>
+            <ol>
+              {view.sources.map((s) => (
+                <li key={s.id} id={`source-${s.n}`}>
+                  <button className="btn btn-ghost" onClick={() => {
+                    setDest("");
+                    show(s);
+                  }}>Move</button>
+                  <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}<ExternalLink size={12} aria-hidden="true" /></a>{" "}
+                  <span className="sheet-label">{s.site || hostname(s.url)} · {plural(notesFrom(s), "note")}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+      </div>
 
       <Dialog open={open === "share"} onClose={close} title="Share this topic">
         <div className="seg" role="radiogroup" aria-label="Who can read it">

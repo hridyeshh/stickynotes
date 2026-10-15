@@ -3,7 +3,6 @@ import { cloneElement } from "react";
 import { AppWindow, Download, GitMerge, Link2, Lock, PenLine, Trash2 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout";
 import { Label, Notebook, type Tone } from "@/components/notebook";
-import { Scrolly } from "@/components/scrolly";
 import "./landing.css";
 
 const FAQ = [
@@ -23,7 +22,7 @@ export default function Landing() {
       <main className="landing">
         {/* On wide screens the notebook stays put while you scroll: it straightens, opens and turns its pages.
             Everywhere else the pages simply follow the hero. */}
-        <Scrolly id="how" className="story">
+        <section id="how" className="story">
           <div className="story-stage">
             <div className="story-copy">
               <p className="hand hero-hello">Dear readers,</p>
@@ -210,10 +209,27 @@ export default function Landing() {
               <span className="nb-loop book-loop" aria-hidden="true" />
             </div>
           </div>
-        </Scrolly>
+        </section>
+
+        <section className="sky" aria-labelledby="sky-title">
+          <img
+            className="sky-art" src="/art/sky.jpg" width={1536} height={864} loading="lazy" decoding="async"
+            alt="Two hands hold a tablet up to a summer sky. On its screen, a shelf of notebooks, each with a sticky note on its cover."
+          />
+          <div className="sky-card">
+            <h2 id="sky-title">Your library, <mark>wherever you are</mark></h2>
+            <ol className="sky-list">
+              <li>Open it on any device <span aria-hidden="true">I</span></li>
+              <li>Saves offline, syncs later <span aria-hidden="true">II</span></li>
+              <li>Search every notebook at once <span aria-hidden="true">III</span></li>
+              <li>Every note keeps its source <span aria-hidden="true">IV</span></li>
+              <li>Export all of it, any time <span aria-hidden="true">V</span></li>
+            </ol>
+          </div>
+        </section>
 
         {/* Scrolling down slides the shelf sideways on wide screens; elsewhere it's a row you swipe. */}
-        <Scrolly className="shelf" aria-labelledby="shelf-title">
+        <section className="shelf" aria-labelledby="shelf-title">
           <div className="shelf-stage">
             <div className="shelf-row">
               <div className="shelf-intro">
@@ -233,7 +249,22 @@ export default function Landing() {
               </div>
             </div>
           </div>
-        </Scrolly>
+        </section>
+
+        <section className="hands" aria-labelledby="hands-title">
+          <div className="hands-copy">
+            <h2 id="hands-title">Your notes are in good hands.</h2>
+            <p>Nothing is sent until you save, nothing is ever sold, and no one sees a note you haven&rsquo;t shared.</p>
+          </div>
+          <div className="hands-art">
+            <img
+              src="/art/hands.jpg" width={1536} height={864} loading="lazy" decoding="async"
+              alt="One person hands a kraft notebook, a star sticker on its cover, to another."
+            />
+            <span className="hands-name" aria-hidden="true">you</span>
+          </div>
+          <p className="hand hands-aside" aria-hidden="true">made for readers,<br />with care <Heart className="hands-heart" /></p>
+        </section>
 
         <section id="faq" className="faq wrap">
           <p className="hand faq-kicker">psst,</p>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createExtensionCode } from "@/app/actions";
-import { KICKERS, SetupBook, Tick } from "@/components/setup";
+import { AddToChrome, KICKERS, SetupBook, Tick } from "@/components/setup";
 import { connectExtension, type Connected } from "@/lib/bridge";
 
 /** Connects as soon as the page opens: the extension's popup sent the user here, so step one is done. */
@@ -41,8 +41,13 @@ export function Connect() {
         <>
           <h1>We can&rsquo;t see the extension</h1>
           <p className="auth-error" role="alert">
-            We couldn&apos;t find the stickynotes extension in this browser. Install or enable it, then reload this page.
+            We couldn&apos;t find the stickynotes extension in this browser. Add it from the Chrome Web Store (or turn it
+            back on), then reload this page.
           </p>
+          <div className="setup-nav">
+            <button className="btn btn-secondary" onClick={() => location.reload()}>I&rsquo;ve added it</button>
+            <AddToChrome />
+          </div>
         </>
       )}
       {status && "error" in status && (

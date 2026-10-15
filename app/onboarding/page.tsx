@@ -10,7 +10,7 @@ export default async function OnboardingPage() {
   return (
     <div className="auth-page setup-desk">
       <Brand href="/library" />
-      <Onboarding name={me.name} email={me.email} connected={!!me.extension_seen_at} />
+      <Onboarding name={me.name} email={me.email} avatar={me.avatar} connected={!!me.extension_seen_at} />
     </div>
   );
 }

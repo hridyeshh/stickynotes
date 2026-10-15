@@ -4,6 +4,14 @@
 const STEPS = ["Add it to your browser", "Connect your account", "Save your first note"];
 export const KICKERS = ["step one,", "step two,", "step three,"];
 
+// The Chrome Web Store listing. Edge and Brave install from it too.
+export const STORE_URL = "https://chromewebstore.google.com/detail/stickynotes/fciennljceeoagambkjppepghigkcnep";
+
+/** Opens the store listing in a new tab, so this page is still here to continue from. */
+export function AddToChrome() {
+  return <a href={STORE_URL} target="_blank" rel="noopener noreferrer" className="btn btn-sticker">Add to Chrome</a>;
+}
+
 /** A pencil tick. */
 export function Tick() {
   return (

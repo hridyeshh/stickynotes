@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Me } from "@/lib/data";
+import { avatarOf } from "@/lib/notes";
 
 export function Brand({ href = "/" }: { href?: string }) {
   return (
@@ -49,7 +50,7 @@ export function SiteFooter() {
         <text x="0" y="192" textLength="1000" lengthAdjust="spacingAndGlyphs">stickynotes</text>
       </svg>
       <div className="footer-fine">
-        <span>© 2026 stickynotes</span>
+        <span>© 2026 stickynotes, a <a href="https://paperboxd.in">PaperBoxd</a> production</span>
         <span>Nothing is sent until you save a note.</span>
       </div>
     </footer>
@@ -75,11 +76,14 @@ export function AppHeader({ user, current }: { user: Me; current?: "library" | "
           <span className="dot" aria-hidden="true" />Connect the extension
         </Link>
       )}
-      <Link href="/settings" className="avatar" title={user.email} aria-label="Settings">{initials(user.name || user.email)}</Link>
+      <Link href="/settings" className="avatar" title={user.email} aria-label="Settings">
+        <AvatarImg pick={user.avatar} seed={user.name || user.email} />
+      </Link>
     </header>
   );
 }
 
-export function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+/** A reader's painted avatar (see avatarOf), to sit in a .avatar circle. */
+export function AvatarImg({ pick, seed }: { pick?: string; seed: string }) {
+  return <img src={`/avatars/${avatarOf(pick, seed)}.webp`} alt="" />;
 }

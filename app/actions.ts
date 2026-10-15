@@ -16,6 +16,17 @@ function failed(e: unknown, what: string): Result {
   return { error: "We couldn't reach stickynotes. Try again in a moment." };
 }
 
+/** Saves the avatar picked in Settings or during setup. */
+export async function setAvatar(avatar: string): Promise<Result> {
+  try {
+    await api("/api/v1/me", { method: "PATCH", token: await token(), body: { avatar } });
+    revalidatePath("/", "layout");
+    return {};
+  } catch (e) {
+    return failed(e, "set avatar failed");
+  }
+}
+
 /** Mints a single-use code for the extension's PKCE challenge (/extension/connect). */
 export async function createExtensionCode(challenge: string): Promise<{ code?: string; error?: string }> {
   try {

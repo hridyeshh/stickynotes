@@ -1,5 +1,6 @@
-/* The landing page: the notebook story, the shelf and the questions. Imported by app/page.tsx only.
-   With motion allowed, every screen gets the scroll-driven version (bottom of the file); without it, it reads laid flat. */
+/* The landing page: the notebook story, the shelf, two paintings and the questions. Imported by app/page.tsx only.
+   With motion allowed and scroll timelines supported, every screen gets the scroll-driven version (bottom of the file);
+   otherwise it reads laid flat. */
 
 .landing { overflow-x: clip; }
 
@@ -35,7 +36,7 @@
 .nbpage h2 { margin: 0 0 3.2cqw; font-weight: 600; font-size: 8.2cqw; line-height: 1; letter-spacing: -.02em; text-wrap: balance; }
 .nbpage p { margin: 0 0 3cqw; text-wrap: pretty; }
 .nbpage .pg-kicker { width: fit-content; margin: 0 0 1.4cqw; font-size: 5.6cqw; rotate: -3deg; }
-.nbpage mark { padding: 0 .1em; background: linear-gradient(100deg, transparent .15em, var(--color-accent-200) .3em calc(100% - .2em), transparent); color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.nbpage mark, .sky-card mark { padding: 0 .1em; background: linear-gradient(100deg, transparent .15em, var(--color-accent-200) .3em calc(100% - .2em), transparent); color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 /* Ruled paper with a margin line; --top is where the ruling starts. */
 .page-ruled .page-in {
   --line: 5.8cqw; --top: 22cqw; --margin: 13cqw;
@@ -184,7 +185,8 @@
 .shelf-intro .hand { width: fit-content; margin: 0 0 8px; font-size: clamp(26px, 2.4vw, 34px); rotate: -3deg; }
 .shelf-intro h2 { margin: 0 0 16px; font-weight: 600; font-size: clamp(38px, 4.4vw, 64px); line-height: .98; letter-spacing: -.02em; }
 .shelf-intro p { max-width: 26em; margin: 0; font-size: 17px; line-height: 1.6; }
-.shelf-item { position: relative; width: clamp(220px, 22vw, 320px); margin: 0; }
+/* As big as the screen allows: a book's height leaves 150px above and below it for the notes and the header. */
+.shelf-item { position: relative; width: clamp(250px, min(30vw, (100vh - 300px) * .75), 440px); margin: 0; }
 .shelf-item:nth-of-type(odd) .nb { rotate: -4deg; }
 .shelf-item:nth-of-type(even) .nb { rotate: 3deg; translate: 0 5%; }
 .shelf-note { position: absolute; left: 6%; bottom: calc(100% + 10px); display: flex; align-items: flex-end; gap: 4px; margin: 0; white-space: nowrap; font-size: clamp(20px, 1.8vw, 26px); color: var(--color-text); rotate: -3deg; }
@@ -193,6 +195,62 @@
 .shelf-item:nth-of-type(even) .shelf-note .doodle { scale: 1 -1; }
 .shelf-end { display: grid; justify-items: start; gap: 18px; width: 300px; }
 .shelf-end .hand { margin: 0; font-size: clamp(26px, 2.4vw, 32px); rotate: -3deg; }
+
+/* — your library in the sky: a painting (public/art/sky.jpg) and an index card of what the library does — */
+.sky { display: grid; grid-template-columns: minmax(0, 1fr); container-type: inline-size; }
+/* Phones and tablets crop to the tablet; the card rests on the bottom of the picture. */
+.sky-art { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 19% 100%; }
+.sky-card {
+  position: relative; justify-self: center; width: min(100% - 2 * var(--gutter), 460px); margin-top: -72px; padding: 22px 26px 6px;
+  border-radius: 8px; background: var(--grain), var(--paper); box-shadow: var(--paper-shadow); rotate: 1deg;
+}
+.sky-card h2 { margin: 0; padding-bottom: 16px; border-bottom: 1.5px solid var(--margin-line); font-weight: 600; font-size: clamp(30px, 8.4vw, 40px); line-height: 1.02; letter-spacing: -.02em; text-wrap: balance; }
+.sky-list { list-style: none; margin: 0; padding: 0; }
+.sky-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 13px 0; font-size: 17px; }
+.sky-list li + li { border-top: 1px solid var(--ruling); }
+.sky-list span { font: 600 19px/1 var(--font-heading); color: var(--color-accent-700); }
+@media (min-width: 640px) { .sky-art { aspect-ratio: 4 / 3; object-position: 22% 100%; } }
+/* Wide screens: the whole painting, with the card in its open sky. */
+@media (min-width: 1000px) {
+  .sky > * { grid-area: 1 / 1; }
+  .sky-art { aspect-ratio: auto; }
+  .sky-card { align-self: center; justify-self: end; width: clamp(360px, 30cqw, 520px); margin: 0 6cqw 0 0; padding: 30px 36px 10px; }
+  .sky-card h2 { padding-bottom: 20px; font-size: clamp(36px, 3cqw, 50px); }
+  .sky-list li { padding: 15px 0; font-size: clamp(17px, 1.3cqw, 20px); }
+}
+
+/* — in good hands: a painting (public/art/hands.jpg) on the page's own grey, so it has no edges — */
+.hands { display: grid; grid-template-columns: minmax(0, 1fr); container-type: inline-size; padding-top: clamp(64px, 9vw, 112px); }
+.hands-copy { justify-self: center; width: min(100% - 2 * var(--gutter), 1180px); }
+.hands-copy h2 { max-width: 9em; margin: 0 0 14px; font-weight: 600; font-size: clamp(40px, 11vw, 56px); line-height: .98; letter-spacing: -.02em; text-wrap: balance; }
+.hands-copy p { max-width: 30em; margin: 0; font-size: 17px; line-height: 1.6; text-wrap: pretty; }
+/* Narrow screens see the middle of the painting, so the arms come in from off screen. */
+.hands-art { position: relative; left: 50%; width: clamp(100%, 900px, 170%); translate: -50% 0; container-type: inline-size; }
+.hands-art img { display: block; width: 100%; height: auto; }
+/* Its owner's name, on the painted label's first line and turned to match it. */
+.hands-name {
+  position: absolute; left: 52.1%; top: 29.9%; translate: -50% -83%; rotate: 9.5deg;
+  font: 600 4cqw/1 var(--font-caveat), cursive; color: var(--color-text); opacity: .82; mix-blend-mode: multiply;
+}
+.hands-aside { justify-self: start; margin: -6% 0 0 var(--gutter); font-size: clamp(24px, 6vw, 30px); rotate: -4deg; }
+.hands-aside .heart { display: inline-block; width: .8em; height: .8em; margin-left: .1em; vertical-align: -.08em; }
+@media (min-width: 1000px) {
+  .hands { padding-top: clamp(24px, 4cqw, 72px); }
+  .hands > * { grid-area: 1 / 1; }
+  .hands-copy { z-index: 1; align-self: start; justify-self: end; width: 24cqw; margin: 7cqw 5cqw 0 0; }
+  .hands-copy h2 { font-size: 3.6cqw; }
+  .hands-aside { z-index: 1; align-self: end; margin: 0 0 8cqw 12cqw; font-size: max(24px, 2.1cqw); }
+}
+/* The name writes itself as the notebook comes up the screen. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hands-name { animation: write-on linear both; animation-timeline: view(); animation-range: entry 100% cover 40%; }
+  }
+}
+@keyframes write-on {
+  from { clip-path: inset(-30% 100% -30% -10%); }
+  to { clip-path: inset(-30% -10% -30% -10%); }
+}
 
 /* — questions — */
 .faq { max-width: 860px; padding: clamp(56px, 8vw, 120px) 0 clamp(72px, 9vw, 140px); }
@@ -207,159 +265,165 @@
 .faq summary:hover { color: var(--color-accent-700); }
 .faq details p { max-width: 62ch; margin: 0 0 22px; line-height: 1.7; color: var(--color-neutral-800); }
 
-/* — with motion, on any screen: the notebook stays on stage while you scroll — */
-@media (prefers-reduced-motion: no-preference) and (scripting: enabled) {
-  /* --p (0 to 1, from Scrolly) drives it all. Leaf k turns from --atk over --dur; each layout below sets the
-     timings, the page size (--pw) and where the camera points. */
-  .story-stage {
-    --t0: clamp(0, (var(--p, 0) - var(--at0)) / var(--dur0), 1);
-    --t1: clamp(0, (var(--p, 0) - var(--at1)) / var(--dur), 1);
-    --t2: clamp(0, (var(--p, 0) - var(--at2)) / var(--dur), 1);
-    --t3: clamp(0, (var(--p, 0) - var(--at3)) / var(--dur), 1);
-    --t4: clamp(0, (var(--p, 0) - var(--at4)) / var(--dur), 1);
-    --t5: clamp(0, (var(--p, 0) - var(--at5)) / var(--dur), 1);
-    --tA: clamp(0, var(--p, 0) / var(--hero), 1);
-    --eA: calc(var(--tA) * var(--tA) * (3 - 2 * var(--tA)));
-    position: sticky; top: 0; display: block; width: auto; height: 100vh; padding: 0; overflow: hidden; perspective: calc(var(--pw) * 4);
-  }
-  .story-copy { position: absolute; z-index: 2; opacity: calc(1 - 1.7 * var(--tA)); }
-  /* The book box is the right-hand page; the spine is its left edge. */
-  .book { --t: 0; position: absolute; left: 0; display: block; width: var(--pw); aspect-ratio: 3 / 4; transform-style: preserve-3d; }
-  /* Each leaf turns on the spine. --z stacks them: unturned leaves sink, turned ones rise. */
-  .leaf {
-    --e: calc(var(--t) * var(--t) * (3 - 2 * var(--t)));
-    position: absolute; inset: 0; display: block; transform-style: preserve-3d; transform-origin: 0 50%;
-  }
-  .leaf-0 { --t: var(--t0); --z: 0; transform: rotateY(calc(-180deg * var(--e))); } /* the cover is stiff */
-  .leaf-1 { --t: var(--t1); --z: 1; }
-  .leaf-2 { --t: var(--t2); --z: 2; }
-  .leaf-3 { --t: var(--t3); --z: 3; }
-  .leaf-4 { --t: var(--t4); --z: 4; }
-  .leaf-5 { --t: var(--t5); --z: 5; }
-  /* A paper leaf bends: four hinged strips. The first turns on the spine; each hinge after it adds --bend, which
-     leads for the first half of the turn and trails for the second, so the free edge lifts first and lands last. */
-  .leaf-soft { --bend: calc(sin(var(--t) * 360deg) * 13deg); }
-  .book .strip { position: absolute; top: 0; bottom: 0; left: 0; display: block; width: 25%; transform-style: preserve-3d; transform-origin: 0 50%; }
-  .strip .strip { left: 100%; width: 100%; transform: rotateY(calc(-1 * var(--bend))); }
-  .strip-0 { --a: calc(-180deg * var(--e)); transform: rotateY(var(--a)) translateZ(calc(var(--z) * -1px)); }
-  .strip-1 { --a: calc(-180deg * var(--e) - var(--bend)); }
-  .strip-2 { --a: calc(-180deg * var(--e) - 2 * var(--bend)); }
-  .strip-3 { --a: calc(-180deg * var(--e) - 3 * var(--bend)); }
-  /* Each strip shows its quarter of the page; the page itself is full size inside it. Strips overlap by a pixel so
-     no seam shows when the leaf lies flat. A back page sits flush at the spine and short of the outer edge. */
-  .slice { --dir: 90deg; position: absolute; inset: 0 -1px 0 0; display: block; overflow: hidden; backface-visibility: hidden; }
-  .slice-back { --dir: 270deg; transform: rotateY(180deg); }
-  .slice > .nbpage { position: absolute; top: 1.6%; bottom: 1.6%; width: calc(400% * .982); aspect-ratio: auto; container-type: size; box-shadow: none; border-radius: 0 1.4% 1.4% 0 / 0 1.05% 1.05% 0; }
-  .slice-back > .nbpage { margin-left: 7.2%; border-radius: 1.4% 0 0 1.4% / 1.05% 0 0 1.05%; }
-  .at-0 { left: 0; }
-  .at-1 { left: -100%; }
-  .at-2 { left: -200%; }
-  .at-3 { left: -300%; }
-  /* Light falls off as a strip tilts. A gradient between the angles at its two hinges blends the strips into a curve. */
-  .slice::after {
-    --shade-in: max(0%, calc(sin(var(--a) + var(--bend) / 2) * -36%));
-    --shade-out: max(0%, calc(sin(var(--a) - var(--bend) / 2) * -36%));
-    content: ""; position: absolute; inset: 0; pointer-events: none; will-change: transform; /* own layer: repainting it leaves the page alone */
-    background: linear-gradient(var(--dir), color-mix(in srgb, var(--ink-shadow) var(--shade-in), transparent), color-mix(in srgb, var(--ink-shadow) var(--shade-out), transparent));
-  }
-  /* Pages sit a little inside the covers, flush at the spine. A back face shares its front's paper. */
-  .book .face {
-    position: absolute; inset: 1.6% 1.8% 1.6% 0; width: auto; margin: 0; aspect-ratio: auto; rotate: none; translate: none; justify-self: normal;
-    overflow: hidden; container-type: size; backface-visibility: hidden; box-shadow: none;
-    border-radius: 0 1.4% 1.4% 0 / 0 1.05% 1.05% 0;
-  }
-  .book .face.face-back { transform: rotateY(180deg); border-radius: 1.4% 0 0 1.4% / 1.05% 0 0 1.05%; }
-  .book .cover { inset: 0; overflow: visible; border-radius: 1.6% 7% 7% 1.6% / 1.2% 5.25% 5.25% 1.2%; } /* its sticky note hangs off the edge */
-  .book .pg-name { inset: 0; border-radius: 7% 1.6% 1.6% 7% / 5.25% 1.2% 1.2% 5.25%; }
-  .book-base { transform: translateZ(-6px); }
-  .book-board { position: absolute; inset: 0; display: block; transform: translateZ(-7px); }
-  /* Shade a leaf as it lifts, and the gutter of every page. */
-  .book .face::after { content: ""; position: absolute; inset: 0; pointer-events: none; will-change: opacity; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 32%, transparent), transparent 75%); opacity: calc(var(--t) * (1 - var(--t)) * 3); }
-  .book .page-in::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
-  .book .face-back .page-in::before { background: linear-gradient(270deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
-  .book .pg-name .page-in::before { display: none; }
-  /* Custom properties inherit, so every change to --p restyles everything under the stage, including all forty copies
-     of the page content. That content reads none of them: resetting the ones that move here lets the browser skip it.
-     ponytail: list kept by hand; a new per-frame variable belongs here too. */
-  .book .page-in {
-    --p: initial; --t: initial; --e: initial; --bend: initial; --a: initial; --tA: initial; --eA: initial; --eB: initial; --c: initial; --U: initial;
-    --t0: initial; --t1: initial; --t2: initial; --t3: initial; --t4: initial; --t5: initial;
-    --T0: initial; --T1: initial; --T2: initial; --T3: initial; --T4: initial; --T5: initial;
-    --u1: initial; --u2: initial; --u3: initial; --u4: initial; --u5: initial; --u6: initial;
-  }
-  .stack-only { display: none; }
-  .book-pencil { display: block; right: -4.6%; top: 22%; width: 5.4%; height: 62%; transform: translateZ(2px); filter: drop-shadow(3px 4px 3px color-mix(in srgb, var(--ink-shadow) 30%, transparent)); }
-  .book-loop { --nb-c: var(--kraft); position: absolute; right: -5.4%; top: 31%; display: block; width: 7.4%; height: 11%; border-radius: 6px / 4px; transform: translateZ(3px); }
+/* — with motion: the notebook stays on stage while you scroll —
+   Scroll-driven CSS animations, no script. Only transform and opacity animate and nothing repaints, so the browser's
+   compositor turns the pages and moves the book in step with the scroll, never waiting on the main thread. All of it
+   runs on the story's view timeline: contain 0% is its top at the top of the screen, 100% its bottom at the bottom.
+   Without scroll timelines, or with reduced motion, the pages lie flat (above). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .story { view-timeline: --story block; }
+    .story-stage { position: sticky; top: 0; display: block; width: auto; height: 100vh; padding: 0; overflow: hidden; perspective: calc(var(--pw) * 4); }
+    .story-copy { position: absolute; z-index: 2; }
+    /* The book box is the right-hand page; the spine is its left edge. */
+    .book { position: absolute; left: 0; display: block; width: var(--pw); aspect-ratio: 3 / 4; transform-style: preserve-3d; }
+    /* Each leaf turns on the spine during its stretch of the scroll (--r; each layout sets --r0 to --r5). --z stacks
+       them: unturned leaves sink, turned ones rise. The cover turns stiff; a paper leaf turns its first strip. */
+    .leaf { position: absolute; inset: 0; display: block; transform-style: preserve-3d; transform-origin: 0 50%; }
+    .leaf-0 { --z: 0px; --r: var(--r0); }
+    .leaf-1 { --z: -1px; --r: var(--r1); }
+    .leaf-2 { --z: -2px; --r: var(--r2); }
+    .leaf-3 { --z: -3px; --r: var(--r3); }
+    .leaf-4 { --z: -4px; --r: var(--r4); }
+    .leaf-5 { --z: -5px; --r: var(--r5); }
+    .leaf-0, .strip-0 { animation: leaf-turn cubic-bezier(.333, 0, .667, 1) both; animation-timeline: --story; animation-range: var(--r); } /* smoothstep */
+    /* A paper leaf bends: four hinged strips. Each hinge after the first adds a bend that leads for the first half of
+       the turn and trails for the second, so the free edge lifts first and lands last. */
+    .book .strip { position: absolute; top: 0; bottom: 0; left: 0; display: block; width: 25%; transform-style: preserve-3d; transform-origin: 0 50%; }
+    .strip .strip { left: 100%; width: 100%; animation: leaf-bend both; animation-timeline: --story; animation-range: var(--r); }
+    /* Each strip shows its quarter of the page; the page itself is full size inside it. Strips overlap by a pixel so
+       no seam shows when the leaf lies flat. A back page sits flush at the spine and short of the outer edge. */
+    .slice { --dir: 90deg; position: absolute; inset: 0 -1px 0 0; display: block; overflow: hidden; backface-visibility: hidden; isolation: isolate; }
+    .slice-back { --dir: 270deg; transform: rotateY(180deg); }
+    .slice > .nbpage { position: absolute; top: 1.6%; bottom: 1.6%; width: calc(400% * .982); aspect-ratio: auto; container-type: size; box-shadow: none; border-radius: 0 1.4% 1.4% 0 / 0 1.05% 1.05% 0; }
+    .slice-back > .nbpage { margin-left: 7.2%; border-radius: 1.4% 0 0 1.4% / 1.05% 0 0 1.05%; }
+    .at-0 { left: 0; }
+    .at-1 { left: -100%; }
+    .at-2 { left: -200%; }
+    .at-3 { left: -300%; }
+    /* Light falls off as a strip tilts. Each strip carries its hinge-side shade as a flat shadow, plus a ramp up to its
+       outer edge's: together exactly the gradient between the two, so the strips blend into one curve. Only their
+       opacity animates, so nothing repaints, and the flat one needs no texture. */
+    .slice::before, .slice::after { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; opacity: 0; animation: leaf-shade-0 linear both; animation-timeline: --story; animation-range: var(--r); }
+    .slice::after { background: var(--ink-shadow); }
+    .slice::before { background: linear-gradient(var(--dir), transparent, var(--ink-shadow)); animation-name: leaf-ramp-0; }
+    .strip-1 > .slice::after { animation-name: leaf-shade-1; }
+    .strip-1 > .slice::before { animation-name: leaf-ramp-1; }
+    .strip-2 > .slice::after { animation-name: leaf-shade-2; }
+    .strip-2 > .slice::before { animation-name: leaf-ramp-2; }
+    .strip-3 > .slice::after { animation-name: leaf-shade-3; }
+    .strip-3 > .slice::before { animation-name: leaf-ramp-3; }
+    /* Pages sit a little inside the covers, flush at the spine. A back face shares its front's paper. */
+    .book .face {
+      position: absolute; inset: 1.6% 1.8% 1.6% 0; width: auto; margin: 0; aspect-ratio: auto; rotate: none; translate: none; justify-self: normal;
+      overflow: hidden; container-type: size; backface-visibility: hidden; box-shadow: none;
+      border-radius: 0 1.4% 1.4% 0 / 0 1.05% 1.05% 0;
+    }
+    .book .face.face-back { transform: rotateY(180deg); border-radius: 1.4% 0 0 1.4% / 1.05% 0 0 1.05%; }
+    .book .cover { inset: 0; overflow: visible; border-radius: 1.6% 7% 7% 1.6% / 1.2% 5.25% 5.25% 1.2%; } /* its sticky note hangs off the edge */
+    .book .pg-name { inset: 0; border-radius: 7% 1.6% 1.6% 7% / 5.25% 1.2% 1.2% 5.25%; }
+    .book-base { transform: translateZ(-6px); }
+    .book-board { position: absolute; inset: 0; display: block; transform: translateZ(-7px); }
+    /* Shade the cover as it lifts, and the gutter of every page. */
+    .leaf-0 .face::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 32%, transparent), transparent 75%); opacity: 0; animation: cover-lift linear both; animation-timeline: --story; animation-range: var(--r); }
+    .book .page-in::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
+    .book .face-back .page-in::before { background: linear-gradient(270deg, color-mix(in srgb, var(--ink-shadow) 10%, transparent), transparent 9%); }
+    .book .pg-name .page-in::before { display: none; }
+    .stack-only { display: none; }
+    .book-pencil { display: block; right: -4.6%; top: 22%; width: 5.4%; height: 62%; transform: translateZ(2px); filter: drop-shadow(3px 4px 3px color-mix(in srgb, var(--ink-shadow) 30%, transparent)); }
+    .book-loop { --nb-c: var(--kraft); position: absolute; right: -5.4%; top: 31%; display: block; width: 7.4%; height: 11%; border-radius: 6px / 4px; transform: translateZ(3px); }
 
-  /* The shelf slides sideways as you scroll down. */
-  .shelf { height: 360vh; padding: 0; }
-  .shelf-stage { position: sticky; top: 0; display: flex; align-items: center; height: 100vh; overflow: hidden; scroll-snap-type: none; }
-  .shelf-row { translate: calc(var(--p, 0) * (100vw - 100%)) 0; }
+    /* The shelf slides sideways as you scroll down, about a pixel across for each pixel down. */
+    .shelf { height: 440vh; padding: 0; view-timeline: --shelf block; }
+    .shelf-stage { position: sticky; top: 0; display: flex; align-items: center; height: 100vh; overflow: hidden; scroll-snap-type: none; }
+    .shelf-row { animation: shelf-slide linear both; animation-timeline: --shelf; animation-range: contain 0% contain 100%; }
+  }
+
+  /* Wide screens: the hero beside the notebook, then the open spread, both pages at once.
+     Hero to centre by 9%, cover open by 16%, then a leaf every 15%. */
+  @media (min-width: 900px) and (min-height: 560px) and (prefers-reduced-motion: no-preference) {
+    .story { height: 860vh; scroll-margin-top: -150vh; } /* #how lands on the open notebook */
+    .story-stage {
+      --r0: contain 9% contain 16%; --r1: contain 22% contain 29%; --r2: contain 37% contain 44%;
+      --r3: contain 52% contain 59%; --r4: contain 67% contain 74%; --r5: contain 82% contain 89%;
+      --pw: min(calc((100vw - 96px) / 2), calc((100vh - 150px) * .75), 600px);
+      /* The hero notebook sits beside the copy on the same 1180px column, not out at the window edge. */
+      --hx: min(50vw + 310px, 100vw - var(--pw) / 2 - 40px);
+    }
+    .story-copy {
+      left: max(var(--gutter), calc(50vw - 590px)); top: min(50% + 34px, 450px); width: min(560px, 44vw); translate: 0 -50%;
+      animation: copy-rise-wide cubic-bezier(.333, 0, .667, 1) both, copy-fade linear both;
+      animation-timeline: --story, --story; animation-range: contain 0% contain 9%, contain 0% contain 5.3%;
+    }
+    .book { top: calc(50% + 34px); animation: book-wide cubic-bezier(.333, 0, .667, 1) both; animation-timeline: --story; animation-range: contain 0% contain 100%; }
+  }
+
+  /* Phones and narrow or short screens: one page at a time. The camera reads the left page, slides to the right one,
+     then follows each turning page back across (book-narrow). Every 15%: a turn (4.5%), a pause to read, a slide
+     (3%), another pause. */
+  @media ((width < 900px) or (height < 560px)) and (prefers-reduced-motion: no-preference) {
+    .story { height: 1500vh; scroll-margin-top: -168vh; } /* #how lands on the first page */
+    .story-stage {
+      --r0: contain 6% contain 10.5%; --r1: contain 21% contain 25.5%; --r2: contain 36% contain 40.5%;
+      --r3: contain 51% contain 55.5%; --r4: contain 66% contain 70.5%; --r5: contain 81% contain 85.5%;
+      /* svh: a phone browser's toolbars never cover the page. */
+      --pw: min(calc(100vw - 32px), calc((100svh - 140px) * .75));
+      /* Where the hero notebook's top edge sits on the stage (which starts under the 71px header): under the copy
+         (394px at most, its title always three lines) with 50px above it; on short phones, a little lower so the copy
+         still clears the header. */
+      --hv: clamp(446px, 100svh - 161px, 476px);
+      height: 100svh;
+    }
+    /* The copy stands on the notebook, 32px above it, however many lines it wraps to. */
+    .story-copy {
+      left: var(--gutter); right: var(--gutter); bottom: calc(100svh - var(--hv) + 32px);
+      animation: copy-rise-narrow cubic-bezier(.333, 0, .667, 1) both, copy-fade linear both;
+      animation-timeline: --story, --story; animation-range: contain 0% contain 5%, contain 0% contain 1.9%;
+    }
+    .hero-title { margin-bottom: 24px; font-size: min(46px, 13.5vw); }
+    .hero-lede { margin-bottom: 28px; }
+    .book { top: calc(50% + 24px); animation: book-narrow cubic-bezier(.333, 0, .667, 1) both; animation-timeline: --story; animation-range: contain 0% contain 100%; }
+  }
 }
 
-/* Wide screens: the hero beside the notebook, then the open spread, both pages at once. */
-@media (min-width: 900px) and (min-height: 560px) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
-  /* Hero to centre by .09, cover open by .16, then a leaf every .15. */
-  .story { height: 860vh; scroll-margin-top: -150vh; } /* #how lands on the open notebook */
-  .story-stage {
-    --hero: .09; --at0: .09; --dur0: .07; --at1: .22; --at2: .37; --at3: .52; --at4: .67; --at5: .82; --dur: .07;
-    --pw: min(calc((100vw - 96px) / 2), calc((100vh - 150px) * .75), 600px);
-    /* The hero notebook sits beside the copy on the same 1180px column, not out at the window edge. */
-    --hx: min(50vw + 310px, 100vw - var(--pw) / 2 - 40px);
-    --eB: calc(var(--t0) * var(--t0) * (3 - 2 * var(--t0))); /* the cover opening slides the spread to centre */
-  }
-  .story-copy {
-    left: max(var(--gutter), calc(50vw - 590px)); top: min(50% + 34px, 450px); width: min(560px, 44vw);
-    translate: 0 calc(-50% - 70vh * var(--eA));
-  }
-  .book {
-    top: calc(50% + 34px);
-    translate: calc(var(--hx) - var(--pw) / 2 + (50vw - var(--hx)) * var(--eA) + var(--pw) / 2 * var(--eB)) calc(-50% + min(0px, 416px - 50vh) * (1 - var(--eA)));
-    rotate: calc(-11deg * (1 - var(--eA)));
-    scale: calc(.8 + .2 * var(--eA));
-  }
+/* A leaf's keyframes run over its own turn; the book's and the copy's over the whole story. */
+@keyframes leaf-turn { from { transform: rotateY(0deg) translateZ(var(--z)); } to { transform: rotateY(-180deg) translateZ(var(--z)); } }
+/* 13° × sin(turn × 360°), as quarter-sine eases. */
+@keyframes leaf-bend {
+  0%, 50% { transform: rotateY(0deg); animation-timing-function: cubic-bezier(.61, 1, .88, 1); }
+  25% { transform: rotateY(-13deg); animation-timing-function: cubic-bezier(.12, 0, .39, 0); }
+  75% { transform: rotateY(13deg); animation-timing-function: cubic-bezier(.12, 0, .39, 0); }
+  100% { transform: rotateY(0deg); }
 }
-
-/* Phones and narrow or short screens: one page at a time. The camera (--c: 0 the left page, 1 the right) reads the
-   left page, slides to the right one, then follows each turning page back across. The closed book counts as 1.
-   Every .15 of --p: a turn (.045), a pause to read, a slide (.03), another pause. */
-@media ((width < 900px) or (height < 560px)) and (prefers-reduced-motion: no-preference) and (scripting: enabled) {
-  .story { height: 1500vh; scroll-margin-top: -168vh; } /* #how lands on the first page */
-  .story-stage {
-    --hero: .05; --at0: .06; --dur0: .045; --at1: .21; --at2: .36; --at3: .51; --at4: .66; --at5: .81; --dur: .045;
-    --up1: .1425; --up2: .2925; --up3: .4425; --up4: .5925; --up5: .7425; --up6: .8925; --pan: .03;
-    /* svh: a phone browser's toolbars never cover the page. */
-    --pw: min(calc(100vw - 32px), calc((100svh - 140px) * .75));
-    /* Where the hero notebook's top edge sits on the stage (which starts under the 71px header): under the copy
-       (394px at most, its title always three lines) with 50px above it; on short phones, a little lower so the copy
-       still clears the header. */
-    --hv: clamp(446px, 100svh - 161px, 476px);
-    --T0: calc(var(--t0) * var(--t0) * (3 - 2 * var(--t0)));
-    --T1: calc(var(--t1) * var(--t1) * (3 - 2 * var(--t1)));
-    --T2: calc(var(--t2) * var(--t2) * (3 - 2 * var(--t2)));
-    --T3: calc(var(--t3) * var(--t3) * (3 - 2 * var(--t3)));
-    --T4: calc(var(--t4) * var(--t4) * (3 - 2 * var(--t4)));
-    --T5: calc(var(--t5) * var(--t5) * (3 - 2 * var(--t5)));
-    --u1: clamp(0, (var(--p, 0) - var(--up1)) / var(--pan), 1);
-    --u2: clamp(0, (var(--p, 0) - var(--up2)) / var(--pan), 1);
-    --u3: clamp(0, (var(--p, 0) - var(--up3)) / var(--pan), 1);
-    --u4: clamp(0, (var(--p, 0) - var(--up4)) / var(--pan), 1);
-    --u5: clamp(0, (var(--p, 0) - var(--up5)) / var(--pan), 1);
-    --u6: clamp(0, (var(--p, 0) - var(--up6)) / var(--pan), 1);
-    --U: calc(var(--u1) * var(--u1) * (3 - 2 * var(--u1)) + var(--u2) * var(--u2) * (3 - 2 * var(--u2)) + var(--u3) * var(--u3) * (3 - 2 * var(--u3))
-      + var(--u4) * var(--u4) * (3 - 2 * var(--u4)) + var(--u5) * var(--u5) * (3 - 2 * var(--u5)) + var(--u6) * var(--u6) * (3 - 2 * var(--u6)));
-    --c: calc(1 - var(--T0) - var(--T1) - var(--T2) - var(--T3) - var(--T4) - var(--T5) + var(--U));
-    height: 100svh;
-  }
-  /* The copy stands on the notebook, 32px above it, however many lines it wraps to. */
-  .story-copy { left: var(--gutter); right: var(--gutter); bottom: calc(100svh - var(--hv) + 32px); translate: 0 calc(-60svh * var(--eA)); opacity: calc(1 - 2.6 * var(--tA)); }
-  .hero-title { margin-bottom: 24px; font-size: min(46px, 13.5vw); }
-  .hero-lede { margin-bottom: 28px; }
-  /* The hero notebook peeks up under the copy, then rises to the middle. At .6 scale its top is .4 * --pw above its centre. */
-  .book {
-    top: calc(50% + 24px);
-    translate: calc(50vw + var(--pw) / 2 - var(--c) * var(--pw)) calc(-50% + (var(--hv) + .4 * var(--pw) - 50svh - 24px) * (1 - var(--eA)));
-    rotate: calc(-8deg * (1 - var(--eA)));
-    scale: calc(.6 + .4 * var(--eA));
-  }
+/* Strip k's shade is .36 × −sin(its angle), the angle being the turn (−180° × smoothstep) less k bends. leaf-shade-k is
+   the shade at its hinge-side edge; leaf-ramp-k adds (outer − inner) / (1 − inner) towards its outer edge. Sampled
+   every 1/16 of the turn. */
+@keyframes leaf-shade-0 { 0%, 6.25% { opacity: 0; } 12.5% { opacity: .02; } 18.75% { opacity: .066; } 25% { opacity: .133; } 31.25% { opacity: .21; } 37.5% { opacity: .285; } 43.75% { opacity: .34; } 50% { opacity: .36; } 56.25% { opacity: .34; } 62.5% { opacity: .285; } 68.75% { opacity: .21; } 75% { opacity: .133; } 81.25% { opacity: .066; } 87.5% { opacity: .02; } 93.75%, 100% { opacity: 0; } }
+@keyframes leaf-ramp-0 { 0% { opacity: 0; } 6.25% { opacity: .028; } 12.5% { opacity: .058; } 18.75% { opacity: .077; } 25% { opacity: .083; } 31.25% { opacity: .071; } 37.5% { opacity: .044; } 43.75% { opacity: .014; } 50% { opacity: 0; } 56.25% { opacity: .014; } 62.5% { opacity: .044; } 68.75% { opacity: .071; } 75% { opacity: .083; } 81.25% { opacity: .077; } 87.5% { opacity: .058; } 93.75% { opacity: .028; } 100% { opacity: 0; } }
+@keyframes leaf-shade-1 { 0% { opacity: 0; } 6.25% { opacity: .028; } 12.5% { opacity: .077; } 18.75% { opacity: .138; } 25% { opacity: .205; } 31.25% { opacity: .266; } 37.5% { opacity: .317; } 43.75% { opacity: .349; } 50% { opacity: .36; } 56.25% { opacity: .349; } 62.5% { opacity: .317; } 68.75% { opacity: .266; } 75% { opacity: .205; } 81.25% { opacity: .138; } 87.5% { opacity: .077; } 93.75% { opacity: .028; } 100% { opacity: 0; } }
+@keyframes leaf-ramp-1 { 0% { opacity: 0; } 6.25% { opacity: .032; } 12.5% { opacity: .06; } 18.75%, 25% { opacity: .077; } 31.25% { opacity: .061; } 37.5% { opacity: .034; } 43.75% { opacity: .01; } 50% { opacity: 0; } 56.25% { opacity: .01; } 62.5% { opacity: .034; } 68.75% { opacity: .061; } 75%, 81.25% { opacity: .077; } 87.5% { opacity: .06; } 93.75% { opacity: .032; } 100% { opacity: 0; } }
+@keyframes leaf-shade-2 { 0% { opacity: 0; } 6.25% { opacity: .059; } 12.5% { opacity: .132; } 18.75% { opacity: .205; } 25% { opacity: .266; } 31.25% { opacity: .311; } 37.5% { opacity: .34; } 43.75% { opacity: .355; } 50% { opacity: .36; } 56.25% { opacity: .355; } 62.5% { opacity: .34; } 68.75% { opacity: .311; } 75% { opacity: .266; } 81.25% { opacity: .205; } 87.5% { opacity: .132; } 93.75% { opacity: .059; } 100% { opacity: 0; } }
+@keyframes leaf-ramp-2 { 0% { opacity: 0; } 6.25% { opacity: .032; } 12.5% { opacity: .06; } 18.75% { opacity: .072; } 25% { opacity: .065; } 31.25% { opacity: .045; } 37.5% { opacity: .022; } 43.75% { opacity: .006; } 50% { opacity: 0; } 56.25% { opacity: .006; } 62.5% { opacity: .022; } 68.75% { opacity: .045; } 75% { opacity: .065; } 81.25% { opacity: .072; } 87.5% { opacity: .06; } 93.75% { opacity: .032; } 100% { opacity: 0; } }
+@keyframes leaf-shade-3 { 0% { opacity: 0; } 6.25% { opacity: .09; } 12.5% { opacity: .184; } 18.75% { opacity: .262; } 25% { opacity: .314; } 31.25% { opacity: .342; } 37.5% { opacity: .354; } 43.75% { opacity: .359; } 50% { opacity: .36; } 56.25% { opacity: .359; } 62.5% { opacity: .354; } 68.75% { opacity: .342; } 75% { opacity: .314; } 81.25% { opacity: .262; } 87.5% { opacity: .184; } 93.75% { opacity: .09; } 100% { opacity: 0; } }
+@keyframes leaf-ramp-3 { 0% { opacity: 0; } 6.25% { opacity: .033; } 12.5% { opacity: .058; } 18.75% { opacity: .062; } 25% { opacity: .046; } 31.25% { opacity: .024; } 37.5% { opacity: .009; } 43.75% { opacity: .002; } 50% { opacity: 0; } 56.25% { opacity: .002; } 62.5% { opacity: .009; } 68.75% { opacity: .024; } 75% { opacity: .046; } 81.25% { opacity: .062; } 87.5% { opacity: .058; } 93.75% { opacity: .033; } 100% { opacity: 0; } }
+/* 3 × t × (1 − t). */
+@keyframes cover-lift { 0%, 100% { opacity: 0; } 12.5%, 87.5% { opacity: .328; } 25%, 75% { opacity: .562; } 37.5%, 62.5% { opacity: .703; } 50% { opacity: .75; } }
+@keyframes copy-rise-wide { to { transform: translateY(-70vh); } }
+@keyframes copy-rise-narrow { to { transform: translateY(-60svh); } }
+@keyframes copy-fade { to { opacity: 0; } }
+/* Wide: the hero notebook straightens, grows and comes to the middle by 9%; opening the cover (to 16%) slides the
+   spread to centre. -2/3 of the page width is half the book's height. */
+@keyframes book-wide {
+  0% { transform: translate(calc(var(--hx) - var(--pw) / 2), calc(var(--pw) * -2 / 3 + min(0px, 416px - 50vh))) rotate(-11deg) scale(.8); }
+  9% { transform: translate(calc(50vw - var(--pw) / 2), calc(var(--pw) * -2 / 3)) rotate(0deg) scale(1); }
+  16%, 100% { transform: translate(50vw, calc(var(--pw) * -2 / 3)) rotate(0deg) scale(1); }
 }
+/* Narrow: the notebook peeks up under the copy and rises to the middle by 5% (at .6 scale its top is .4 of a page
+   width above its centre). Then the camera holds on the right page, follows each turn to the left page, and slides
+   back to the right one. */
+@keyframes book-narrow {
+  0% { transform: translate(calc(50vw - var(--pw) / 2), calc(var(--pw) * -2 / 3 + var(--hv) + var(--pw) * .4 - 50svh - 24px)) rotate(-8deg) scale(.6); }
+  5%, 6%, 17.25%, 21%, 32.25%, 36%, 47.25%, 51%, 62.25%, 66%, 77.25%, 81%, 92.25%, 100% { transform: translate(calc(50vw - var(--pw) / 2), calc(var(--pw) * -2 / 3)) rotate(0deg) scale(1); }
+  10.5%, 14.25%, 25.5%, 29.25%, 40.5%, 44.25%, 55.5%, 59.25%, 70.5%, 74.25%, 85.5%, 89.25% { transform: translate(calc(50vw + var(--pw) / 2), calc(var(--pw) * -2 / 3)) rotate(0deg) scale(1); }
+}
+@keyframes shelf-slide { to { transform: translateX(calc(100vw - 100%)); } }

@@ -9,7 +9,8 @@ export const SIGNED_IN_COOKIE = "sn_in";
 /** Holds state + PKCE verifier between /api/auth/google and its callback. */
 export const OAUTH_COOKIE = "sn_oauth";
 
-export type User = { id: string; email: string; name: string; avatar_url: string };
+// avatar: the key picked on the website (lib/notes AVATARS), "" until then.
+export type User = { id: string; email: string; name: string; avatar_url: string; avatar?: string };
 export type Session = { access_token: string; refresh_token: string; expires_in: number; user: User };
 
 const SIXTY_DAYS = 60 * 24 * 60 * 60; // the API's refresh-token lifetime
