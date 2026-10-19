@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Archive, Download, FileText, LogOut, Monitor, Puzzle, Smartphone } from "lucide-react";
+import { Archive, Compass, Download, FileText, LogOut, Monitor, Puzzle, Smartphone } from "lucide-react";
 import { disconnectDevice, signOut } from "@/app/actions";
 import { AvatarPicker } from "@/components/avatar-picker";
 import { AppHeader, AvatarImg } from "@/components/layout";
 import { load, type Me } from "@/lib/data";
 import { avatarOf, deviceLabel, timeAgo, type Device } from "@/lib/notes";
-import { DeleteAccount } from "./settings";
+import { DeleteAccount, SuggestionsSwitch } from "./settings";
 
 export const metadata = { title: "Settings · stickynotes" };
 
@@ -78,6 +78,25 @@ export default async function Settings() {
             )}
           </ul>
         </section>
+
+        {me.suggestions !== undefined && (
+          <section className="settings-section">
+            <div>
+              <h2>Reading suggestions</h2>
+              <p className="settings-note">Pages to read next under each topic, and tag ideas, found from your notes. Off unless you turn them on.</p>
+            </div>
+            <div className="settings-rows">
+              <div className="settings-row">
+                <span className="settings-icon"><Compass size={19} aria-hidden="true" /></span>
+                <SuggestionsSwitch on={!!me.suggestions}>
+                  Sends a topic&apos;s title and its 30 newest notes to Google&apos;s Gemini, and the searches it writes to Brave
+                  Search. Google may use them to improve its products, and people at Google may read them. Turning this off
+                  deletes what was found. <Link href="/privacy#suggestions">Privacy</Link> has more.
+                </SuggestionsSwitch>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="settings-section">
           <div>

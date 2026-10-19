@@ -1,6 +1,6 @@
 # stickynotes — plan & status
 
-Read this first in a new session. Last updated 2026-10-15.
+Read this first in a new session. Last updated 2026-10-19.
 
 ## What it is
 A Chrome/Edge/Brave extension plus a web library. Select text on any page and it is saved as a bullet
@@ -177,8 +177,45 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - Sign-in now sends the browser's user agent so Settings can name devices. Older sessions show "A web browser".
     - Settings can't mark "this browser": the access token doesn't say which session it belongs to.
     - Onboarding has no Chrome Web Store link until phase 7. "Suggest tags" waits for phase 6.
-- [ ] **6. Tags + AI (optional).** Tags and filter chips; suggestions and a topic-match fallback via the Claude API
-  from Go. It sends note text to a third party, so disclose it and default it off.
+- [x] **6. Reading suggestions + tags.** Built 2026-10-19 on `main` in both repos, uncommitted. `npm test` (29), lint,
+  tsc, the Go unit tests and `TestTagsAndSuggestions` pass. Checked end to end with the real Gemini and Brave keys:
+  a local API on a throwaway DB, a scratch `next dev` and headless Chrome. Turning suggestions on built a topic in ~9 s:
+  6 links and tag ideas. Adding an idea, removing or typing a tag, the library's tag filter and the Settings switch all
+  work, at 1440 and 390 wide with no overflow.
+  - **Go** (`internal/notes/suggest.go`, migration 000004):
+    - `topics.tags` (at most 12, lower case) and `PUT /topics/{id}/tags`. Merging keeps both topics' tags.
+    - `users.suggestions` is NULL until the user decides. `PATCH /me {suggestions}` sets it, and turning it off deletes
+      `topic_suggestions` (a build still running then saves nothing).
+    - `GET /topics/{id}/suggestions` (403 while off). A first build waits up to 12 s; a slower one shows on the next
+      visit. After that it serves the saved result and rebuilds in the background once the notes change and the last
+      build is a day old (judged by the DB clock).
+    - A build sends the title and newest 30 notes (500 characters each) to Gemini (3–4 searches plus up to 4 tag ideas,
+      JSON schema), runs the searches on Brave in parallel, and keeps 6 links that aren't sources, deduped by address
+      or title. One build per topic at a time; at most 25 builds per user a day; any failure pauses builds for 10 minutes.
+    - Env: `GEMINI_API_KEY`, `BRAVE_SEARCH_API_KEY`, optional `GEMINI_MODELS` (tried in order; default
+      `gemini-3.8-flash,gemini-3.5-flash-lite`). `gemini-2.5-flash` no longer serves new keys (404), and the free tier
+      often returns 503 "high demand". Brave allows 50 requests a second.
+  - **Web:**
+    - Topic page: tag chips on the rules (× removes, dashed "Add tag" with the library's tags offered). With
+      suggestions on, dashed amber tag ideas and "Read more" under Sources stream in.
+    - While undecided, a sticky note under Sources offers suggestions and says what is sent ("Turn on suggestions" /
+      "No thanks").
+    - Library: filter chips (All plus each tag, with counts); search also matches tags.
+    - Settings: a "Reading suggestions" row with a switch.
+    - Privacy: a `#suggestions` section, plus mentions in the short version, the data list, its uses, the third
+      parties and the controls; dated 19 October 2026.
+    - Landing: the FAQ "Can other people see my notes?" and the good-hands line now allow for suggestions.
+    - Markdown export lists tags. Print hides tags and suggestions.
+  - Topic-match fallback dropped (the user's call, 2026-10-20): matching stays on the device, as the landing and
+    privacy page promise; Change, Move, Merge and the tag ideas cover pages filed in the wrong topic.
+  - **Before shipping:**
+    - Set `GEMINI_API_KEY` and `BRAVE_SEARCH_API_KEY` on Railway.
+    - Deploy the backend first. The web hides the offer and the switch when `/me` has no `suggestions`, and an older
+      API would wipe the avatar on that PATCH.
+    - Check the Chrome Web Store Limited Use answers: the privacy page promises Limited Use, and the Gemini free tier
+      lets Google use, and people read, notes the extension collected.
+  - Local `make test`: `TestLibrary`'s pull-after-merge fails because the Docker VM clock is 4.6 days behind the host
+    (it fails at HEAD too). Restart Docker Desktop.
 - [~] **7. Ship.** Started 2026-10-12. Waiting on the domain the user is buying.
   - Done: `stickynotes-backend/railway.json` sets the `/health` health check (it applies from the next deploy).
   - Once the domain exists:
@@ -350,3 +387,7 @@ extension bridge):
   or selections that cross hidden text, aren't restored; the note itself is kept.
 - Change leaves the old topic in place with no notes. Topic matching skips it and the web library hides it.
 - Tabs that were open before the extension was installed or reloaded need a reload before they can save.
+- Reading suggestions keep their failure pause and in-flight builds in the API process. With more than one replica each
+  pauses on its own and two could build one topic at once; move both to Postgres then.
+- Read more drops a link whose title (before a " | " or " - " site suffix) matches another's or a source's, so two
+  different pages with the same plain title count as one.

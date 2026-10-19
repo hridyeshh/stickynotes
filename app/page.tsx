@@ -11,7 +11,7 @@ const FAQ = [
   ["What does the extension send, and when?", "Nothing until you save a note. Then it sends that note: the passage, the section it sat under and the page's address. It never records your browsing."],
   ["How does it pick the topic?", "It reads the page's main heading and matches it against your topics, on your device. Wrong pick? The Saved toast has a Change button, and the library can move or merge topics later."],
   ["Does it work offline?", "Yes. Notes are kept on your device first and sync to your library when you're back online."],
-  ["Can other people see my notes?", "Only if you share a topic with a link. Make it private again and that link stops working for good."],
+  ["Can other people see my notes?", "Only if you share a topic with a link. Make it private again and that link stops working for good. Reading suggestions, off unless you turn them on, send a topic's newest notes to Google; Privacy has the details."],
   ["Can I take my notes with me?", "Any time. Settings exports everything as Markdown or JSON. Deleting your account removes every note at once."],
 ];
 
@@ -254,7 +254,7 @@ export default function Landing() {
         <section className="hands" aria-labelledby="hands-title">
           <div className="hands-copy">
             <h2 id="hands-title">Your notes are in good hands.</h2>
-            <p>Nothing is sent until you save, nothing is ever sold, and no one sees a note you haven&rsquo;t shared.</p>
+            <p>Nothing is sent until you save, nothing is ever sold, and no one sees a note you haven&rsquo;t chosen to share.</p>
           </div>
           <div className="hands-art">
             <img

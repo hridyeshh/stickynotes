@@ -1,8 +1,35 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { deleteAccount } from "@/app/actions";
+import { deleteAccount, setSuggestions } from "@/app/actions";
 import { Dialog } from "@/components/dialog";
+
+/** The reading suggestions row: what they do (children), then a switch that saves straight away. */
+export function SuggestionsSwitch({ on, children }: { on: boolean; children: React.ReactNode }) {
+  const [shown, setShown] = useState(on);
+  const [error, setError] = useState("");
+  const [, start] = useTransition();
+
+  return (
+    <>
+      <div className="settings-what">
+        <div className="settings-name" id="suggestions-name">Suggest pages and tags</div>
+        <div className="settings-note">{children}</div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+      </div>
+      <button className="switch" role="switch" aria-checked={shown} aria-labelledby="suggestions-name" onClick={() => {
+        setShown(!shown);
+        start(async () => {
+          const r = await setSuggestions(!shown);
+          setError(r.error ?? "");
+          if (r.error) setShown(shown);
+        });
+      }}>
+        <span />
+      </button>
+    </>
+  );
+}
 
 /** Delete account, behind a typed confirmation. */
 export function DeleteAccount() {

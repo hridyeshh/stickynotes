@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { ACCESS_COOKIE, type User } from "@/lib/session";
 
-/** GET /me: the user, and when their extension last checked in (null: none connected). */
-export type Me = User & { extension_seen_at: string | null };
+/** GET /me: the user, and when their extension last checked in (null: none connected). suggestions: reading suggestions
+ *  on or off, null until they decide; an API from before phase 6 leaves it out, and then nothing offers them. */
+export type Me = User & { extension_seen_at: string | null; suggestions?: boolean | null };
 
 /** GETs an API path with the session's token; a dead session goes to sign-in. */
 export async function load<T>(path: string): Promise<T> {

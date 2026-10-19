@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { AVATARS, avatarOf, deviceLabel, libraryCards, libraryMarkdown, matches, timeAgo, toBackup, topicView, type Library } from "./notes.ts";
+import { AVATARS, avatarOf, deviceLabel, libraryCards, libraryMarkdown, matches, tagCounts, timeAgo, toBackup, topicView, type Library } from "./notes.ts";
 
 test("avatarOf keeps a pick, and gives everyone else the same one every time", () => {
   assert.equal(avatarOf("owl", "Asha Rao"), "owl");
@@ -48,6 +48,16 @@ test("libraryCards puts the latest topic first, skips empty topics, and searches
   assert.deepEqual(cards[1].preview, ["Virtual nodes even out load.", "Only n/m keys move."]);
   assert.ok(matches(cards[1], "RING  virtual") && !matches(cards[1], "ring bucket"));
   assert.ok(matches(cards[0], "") && matches(cards[0], "c.example"));
+});
+
+test("tags ride on the cards, count up for the chips, are searched and head their topic in Markdown", () => {
+  const tags: Record<string, string[]> = { t1: ["systems", "ring theory"], t2: ["systems"] };
+  const tagged: Library = { ...lib, topics: lib.topics.map((t) => ({ ...t, tags: tags[t.id] })) };
+  const cards = libraryCards(tagged, now);
+  assert.deepEqual(cards.map((c) => c.tags), [["systems"], ["systems", "ring theory"]]);
+  assert.deepEqual(tagCounts(cards), [["systems", 2], ["ring theory", 1]]);
+  assert.ok(matches(cards[0], "systems") && !matches(libraryCards(lib, now)[0], "systems"));
+  assert.match(libraryMarkdown(tagged, now), /^# Consistent hashing\n\nTags: systems, ring theory\n\n## History$/m);
 });
 
 test("timeAgo reads relative, then a UTC date", () => {

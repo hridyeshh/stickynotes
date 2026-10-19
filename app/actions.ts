@@ -94,6 +94,28 @@ export async function setShare(id: string, isPublic: boolean): Promise<Result & 
   }
 }
 
+/** Replaces a topic's tags. The API cleans them: lower case, no repeats, at most 12. */
+export async function setTags(id: string, tags: string[]): Promise<Result> {
+  try {
+    await api(`/api/v1/topics/${encodeURIComponent(id)}/tags`, { method: "PUT", token: await token(), body: { tags } });
+    revalidatePath("/", "layout");
+    return {};
+  } catch (e) {
+    return failed(e, "set tags failed");
+  }
+}
+
+/** Reading suggestions on or off: from Settings, or the card on a topic's page. Off also deletes what they found. */
+export async function setSuggestions(on: boolean): Promise<Result> {
+  try {
+    await api("/api/v1/me", { method: "PATCH", token: await token(), body: { suggestions: on } });
+    revalidatePath("/", "layout");
+    return {};
+  } catch (e) {
+    return failed(e, "set suggestions failed");
+  }
+}
+
 export async function disconnectDevice(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   await api(`/api/v1/devices/${encodeURIComponent(id)}`, { method: "DELETE", token: await token() }).catch((e) =>

@@ -1,13 +1,16 @@
 // The library as the API returns it, and the pure functions that turn it into what
 // the pages show. No React and no Node APIs, so `node --test` runs them directly.
 
-export type Topic = { id: string; title: string; is_public: boolean; share_slug: string | null; created_at: string };
+/** tags: lower case, at most 12. Older API responses have none. */
+export type Topic = { id: string; title: string; is_public: boolean; share_slug: string | null; tags?: string[]; created_at: string };
 export type Source = { id: string; topic_id: string; url: string; title: string; site: string };
 /** The highlighter colour a note was saved in. Older API responses have none: yellow. */
 export type Ink = "yellow" | "pink" | "blue" | "green";
 export type Highlight = { id: string; source_id: string; text: string; section: string; color?: Ink; created_at: string };
 export type Library = { topics: Topic[]; sources: Source[]; highlights: Highlight[] };
 export type Device = { id: string; client: string; user_agent: string; last_active: string };
+/** GET /topics/{id}/suggestions: pages to read next that aren't among the topic's sources, and tags it could have. */
+export type Suggestions = { links: { url: string; title: string; site: string }[]; tags: string[] };
 
 /** A source numbered by when its first note was saved: the [n] beside each note. */
 export type NumberedSource = Source & { n: number };
@@ -57,7 +60,8 @@ export type Card = {
   preview: string[];
   noteCount: number;
   sourceCount: number;
-  /** Lower-cased title, notes, page titles and sites, for search. */
+  tags: string[];
+  /** Lower-cased title, tags, notes, page titles and sites, for search. */
   haystack: string;
 };
 
@@ -81,10 +85,18 @@ export function libraryCards(lib: Library, now: number): Card[] {
       preview: notes.slice(-2).map((h) => h.text),
       noteCount: notes.length,
       sourceCount: sources.length,
-      haystack: [t.title, ...notes.map((h) => `${h.text} ${h.section}`), ...sources.map((s) => `${s.title} ${s.site}`)].join("\n").toLowerCase(),
+      tags: t.tags ?? [],
+      haystack: [t.title, ...(t.tags ?? []), ...notes.map((h) => `${h.text} ${h.section}`), ...sources.map((s) => `${s.title} ${s.site}`)].join("\n").toLowerCase(),
     }];
   });
   return cards.sort((a, b) => latest.get(b.id)!.localeCompare(latest.get(a.id)!));
+}
+
+/** The cards' tags with how many topics wear each, most worn first, then A to Z. */
+export function tagCounts(cards: Pick<Card, "tags">[]): [string, number][] {
+  const counts = new Map<string, number>();
+  for (const c of cards) for (const t of c.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
 /** Every word of the query appears somewhere in the card. */
@@ -115,9 +127,9 @@ export function hostname(url: string): string {
   }
 }
 
-/** A topic as Markdown: sections of bullets with [n] markers, then the numbered sources. */
-export function toMarkdown(v: Pick<TopicView, "title" | "sources" | "sections">): string {
-  const out = [`# ${v.title}`];
+/** A topic as Markdown: its tags, sections of bullets with [n] markers, then the numbered sources. */
+export function toMarkdown(v: Pick<TopicView, "title" | "sources" | "sections"> & { tags?: string[] }): string {
+  const out = [`# ${v.title}`, ...(v.tags?.length ? ["", `Tags: ${v.tags.join(", ")}`] : [])];
   for (const s of v.sections) {
     out.push(...(s.name ? ["", `## ${s.name}`] : []), "", ...s.notes.map((n) => `- ${n.text} [${n.n}]`));
   }
@@ -128,7 +140,7 @@ export function toMarkdown(v: Pick<TopicView, "title" | "sources" | "sections">)
 /** Every topic with notes, most recent first, as one Markdown file. */
 export function libraryMarkdown(lib: Library, now: number): string {
   return libraryCards(lib, now)
-    .map((c) => toMarkdown(libraryTopic(lib, c.id, now)!))
+    .map((c) => toMarkdown({ ...libraryTopic(lib, c.id, now)!, tags: c.tags }))
     .join("\n---\n\n");
 }
 

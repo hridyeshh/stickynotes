@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import { ArrowLeft, Download, ExternalLink, Globe, Lock, Merge, Pencil, Share2, Trash2, X } from "lucide-react";
-import { deleteNote, deleteTopic, mergeTopic, moveSource, renameTopic, setShare } from "@/app/actions";
+import { Suspense, use, useState, useTransition } from "react";
+import { ArrowLeft, Download, ExternalLink, Globe, Lock, Merge, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import { deleteNote, deleteTopic, mergeTopic, moveSource, renameTopic, setShare, setSuggestions, setTags } from "@/app/actions";
 import { Dialog } from "@/components/dialog";
-import { hostname, plural, type NumberedSource, type Topic, type TopicView } from "@/lib/notes";
+import { hostname, plural, type NumberedSource, type Suggestions, type Topic, type TopicView } from "@/lib/notes";
 
 type Other = { id: string; title: string };
 type Open = null | "share" | "delete" | "merge" | NumberedSource;
+const MAX_TAGS = 12; // the API's limit
 
-export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }; others: Other[] }) {
+export function TopicPage({ view, others, tags, suggestions, offer }: {
+  view: TopicView & { topic: Topic };
+  others: Other[];
+  /** Every tag in the library. */
+  tags: string[];
+  /** What reading suggestions found, still streaming in; null while they're off. */
+  suggestions: Promise<Suggestions> | null;
+  /** Reading suggestions are undecided: offer them. */
+  offer: boolean;
+}) {
   const { topic } = view;
   const [open, setOpen] = useState<Open>(null);
   const [renaming, setRenaming] = useState(false);
@@ -91,6 +101,7 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
             {view.noteCount ? `${plural(view.noteCount, "note")} from ${plural(view.sources.length, "source")} · last saved ${view.lastSaved}` : "No notes"}
           </span>
         </p>
+        <Tags tags={topic.tags ?? []} library={tags} ideas={suggestions} pending={pending} save={(next) => run(() => setTags(topic.id, next))} />
 
         {view.sections.map((sec) => (
           <section key={sec.name} className="topic-section">
@@ -98,7 +109,7 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
             {sec.notes.map((n) => (
               <div key={n.id} className="note-row">
                 <p className="bullet note-text">
-                  <mark className={`hl hl-${n.color ?? "yellow"}`}>{n.text}</mark> <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
+                  {n.text} <a href={`#source-${n.n}`} className="src-marker" aria-label={`Source ${n.n}`}>[{n.n}]</a>
                 </p>
                 <div className="note-side">
                   <span>{n.when}</span>
@@ -130,6 +141,17 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
             </ol>
           </section>
         )}
+        {suggestions && (
+          <Suspense fallback={
+            <section className="sources read-more" aria-busy="true">
+              <h2>Read more</h2>
+              <p><span className="sheet-label">Looking for pages to read next…</span></p>
+            </section>
+          }>
+            <ReadMore suggestions={suggestions} />
+          </Suspense>
+        )}
+        {offer && <SuggestOffer pending={pending} choose={(on) => run(() => setSuggestions(on))} />}
       </div>
 
       <Dialog open={open === "share"} onClose={close} title="Share this topic">
@@ -212,6 +234,111 @@ export function TopicPage({ view, others }: { view: TopicView & { topic: Topic }
         )}
       </Dialog>
     </main>
+  );
+}
+
+/** The topic's tags as chips on the sheet, a field to add one, and, with suggestions on, ideas that add with a click. */
+function Tags({ tags, library, ideas, pending, save }: {
+  tags: string[];
+  library: string[];
+  ideas: Promise<Suggestions> | null;
+  pending: boolean;
+  save: (tags: string[]) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const add = (tag: string) => save([...tags, tag]);
+  const done = () => {
+    setDraft("");
+    setAdding(false);
+  };
+
+  return (
+    <div className="tags">
+      {tags.map((t) => (
+        <span key={t} className="chip">
+          {t}
+          <button className="chip-x" title="Remove tag" aria-label={`Remove the tag ${t}`} disabled={pending}
+            onClick={() => save(tags.filter((x) => x !== t))}>
+            <X size={12} aria-hidden="true" />
+          </button>
+        </span>
+      ))}
+      {adding ? (
+        <form className="tag-form" onSubmit={(e) => {
+          e.preventDefault();
+          if (draft.trim()) add(draft);
+          done();
+        }}>
+          <input className="chip chip-input" value={draft} onChange={(e) => setDraft(e.target.value)} list="tag-list" maxLength={32}
+            aria-label="New tag" placeholder="New tag" autoFocus onBlur={() => !draft.trim() && done()}
+            onKeyDown={(e) => e.key === "Escape" && done()} />
+          <datalist id="tag-list">{library.filter((t) => !tags.includes(t)).map((t) => <option key={t} value={t} />)}</datalist>
+        </form>
+      ) : tags.length < MAX_TAGS && (
+        <button className="chip chip-add" onClick={() => setAdding(true)}><Plus size={12} aria-hidden="true" />Add tag</button>
+      )}
+      {ideas && tags.length < MAX_TAGS && (
+        <Suspense fallback={null}>
+          <TagIdeas ideas={ideas} tags={tags} pending={pending} add={add} />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
+/** Tags the suggestions came up with that the topic doesn't wear yet. */
+function TagIdeas({ ideas, tags, pending, add }: { ideas: Promise<Suggestions>; tags: string[]; pending: boolean; add: (tag: string) => void }) {
+  const fresh = use(ideas).tags.filter((t) => !tags.includes(t));
+  if (!fresh.length) return null;
+  return (
+    <>
+      <span className="sheet-label tag-ideas">ideas:</span>
+      {fresh.map((t) => (
+        <button key={t} className="chip chip-idea" disabled={pending} aria-label={`Add the suggested tag ${t}`} onClick={() => add(t)}>
+          <Plus size={12} aria-hidden="true" />{t}
+        </button>
+      ))}
+    </>
+  );
+}
+
+/** Pages to read next, under the sources. When nothing was found (or the APIs were busy) the sheet ends at its sources. */
+function ReadMore({ suggestions }: { suggestions: Promise<Suggestions> }) {
+  const { links } = use(suggestions);
+  if (!links.length) return null;
+  return (
+    <section className="sources read-more" aria-labelledby="read-more-title">
+      <h2 id="read-more-title">Read more</h2>
+      <ul>
+        {links.map((l) => (
+          <li key={l.url} className="bullet">
+            <a href={l.url} target="_blank" rel="noopener noreferrer">{l.title || l.url}<ExternalLink size={12} aria-hidden="true" /></a>{" "}
+            <span className="sheet-label">{l.site || hostname(l.url)}</span>
+          </li>
+        ))}
+      </ul>
+      <p><span className="sheet-label">Found with Gemini and Brave Search from this topic&apos;s notes</span></p>
+    </section>
+  );
+}
+
+/** While reading suggestions are undecided: a sticky note on the sheet saying what turning them on sends, and to whom. */
+function SuggestOffer({ pending, choose }: { pending: boolean; choose: (on: boolean) => void }) {
+  return (
+    <aside className="suggest-card" aria-labelledby="suggest-title">
+      <h2 id="suggest-title">Want more to read?</h2>
+      <p>Turn on reading suggestions and each topic lists pages that go further than your sources, with tag ideas.</p>
+      <p className="suggest-fine">
+        To find them, stickynotes sends a topic&apos;s title and its 30 newest notes to Google&apos;s Gemini, which writes a
+        few web searches, and runs those on Brave Search. Google may use what it&apos;s sent to improve its products, and
+        people at Google may read it. You can turn this off in Settings. <Link href="/privacy#suggestions">Privacy</Link> has more.
+      </p>
+      <div className="row-actions">
+        <button className="btn btn-primary" disabled={pending} onClick={() => choose(true)}>Turn on suggestions</button>
+        <button className="btn btn-ghost" disabled={pending} onClick={() => choose(false)}>No thanks</button>
+      </div>
+    </aside>
   );
 }
 

@@ -4,19 +4,31 @@ import Link from "next/link";
 import { useState } from "react";
 import { Globe, Search } from "lucide-react";
 import { Notebook, toneFor } from "@/components/notebook";
-import { matches, plural, type Card } from "@/lib/notes";
+import { matches, plural, tagCounts, type Card } from "@/lib/notes";
 
-/** The topics as a shelf of notebooks, filtered as you type. */
+/** The topics as a shelf of notebooks, filtered as you type and by a tag. */
 export function LibraryList({ cards }: { cards: Card[] }) {
   const [q, setQ] = useState("");
-  const shown = cards.filter((c) => matches(c, q));
+  const [tag, setTag] = useState("");
+  const tags = tagCounts(cards);
+  const shown = cards.filter((c) => (!tag || c.tags.includes(tag)) && matches(c, q));
   return (
     <>
       <label className="search">
         <Search size={16} aria-hidden="true" />
         <input className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Search notes, pages and sites" aria-label="Search your notes" />
+          placeholder="Search notes, tags, pages and sites" aria-label="Search your notes" />
       </label>
+      {tags.length > 0 && (
+        <div className="chips" role="group" aria-label="Show topics with a tag">
+          <button className="chip" aria-pressed={!tag} onClick={() => setTag("")}>All</button>
+          {tags.map(([t, n]) => (
+            <button key={t} className="chip" aria-pressed={tag === t} aria-label={`${t}, ${plural(n, "topic")}`} onClick={() => setTag(tag === t ? "" : t)}>
+              {t}<span className="chip-n" aria-hidden="true">{n}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <ul className="topic-shelf">
         {shown.map((c) => (
           <li key={c.id}>
@@ -32,7 +44,7 @@ export function LibraryList({ cards }: { cards: Card[] }) {
           </li>
         ))}
       </ul>
-      {!shown.length && <p className="no-results">Nothing matches “{q}”.</p>}
+      {!shown.length && <p className="no-results">Nothing {tag && <>tagged “{tag}” </>}matches “{q}”.</p>}
     </>
   );
 }
