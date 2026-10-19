@@ -194,10 +194,10 @@ async function connectFinish(code) {
   const res = await request('/api/v1/extension/token', { body: { code, code_verifier: verifier } });
   if (!res.ok) throw new Error(res.status === 401 ? 'This connection attempt expired.' : "We couldn't reach stickynotes.");
   const s = await res.json();
-  // Notes saved before connecting join this account; another account's copy is dropped.
+  // Notes saved before connecting join this account; another account's copy is dropped, but not its unsynced notes.
   const dropped = await mutate((store) => {
     const other = !!store.owner && store.owner !== s.user.id;
-    if (other) Object.assign(store, SN.emptyStore());
+    if (other) Object.assign(store, SN.keepUnsynced(store, () => crypto.randomUUID()));
     store.owner = s.user.id;
     return other;
   });
@@ -347,10 +347,15 @@ const handlers = {
   },
   // The topic in the web library once it has synced; the extension's notes page otherwise.
   async view({ url }) {
+    if (await getAuth()) await sync().catch(() => {}); // the toast's View comes while its save is still on the way
     const store = await read();
     const topic = store.sources[url]?.topic_id;
     const web = topic && (await getAuth()) && !store.outbox.length;
     await chrome.tabs.create({ url: web ? `${WEB_ORIGIN}/t/${topic}` : chrome.runtime.getURL('notes.html') + (topic ? `#${topic}` : '') });
+  },
+  // The toast's Connect, for a note kept only on this device. The page connects as it opens.
+  async connect() {
+    await chrome.tabs.create({ url: `${WEB_ORIGIN}/extension/connect` });
   },
   async 'connect:start'(msg, sender) {
     allow(fromWebApp(sender));

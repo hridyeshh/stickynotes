@@ -112,6 +112,16 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
   - Found 2026-10-12: a saved note never reached the account because the extension was never connected (no
     `/extension/codes` call in the API log); unconnected saves wait in the outbox. The connect bridge was then checked
     in a real headless Chrome: hello → challenge, and a bad code → "This connection attempt expired."
+  - Fixed 2026-10-19 (uncommitted; reaches the store install only with the next Web Store version), found when notes
+    saved in an unconnected store install never reached the library:
+    - Connecting a browser last connected to another account (deleted, or this browser disconnected) wiped its whole
+      store, notes still waiting to sync included. `SN.keepUnsynced` now keeps those and files them afresh for the new
+      account; only the old account's synced copy goes.
+    - The toast's View came while its save was still being pushed, so it opened the extension's notes page; it now
+      waits for that sync.
+    - Saving while not connected says "Kept on this device" with a Connect button (opens `/extension/connect`) in place of View.
+    - Still open: the web's "Extension connected" pill and onboarding go by `extension_seen_at` (any extension, ever),
+      not this browser's install.
 - [x] **4. Topics + extension UX.** Built 2026-10-10 on branch `phase-4` of this repo (stacked on `phase-3`; the
   backend needed no changes). Merged into `main` 2026-10-12. `npm test` and lint pass. Headless Chrome ran `content.js` on
   a test page with `chrome.*` stubbed: it saved two passages (one across an `<em>`), found a repeated sentence's

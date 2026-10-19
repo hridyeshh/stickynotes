@@ -146,6 +146,22 @@
     store.cursor = res.cursor;
   }
 
+  /** Connecting an account other than the last one: its copy goes, but notes still waiting to sync never
+   *  reached it (it was deleted, or this browser was disconnected), so they stay, filed afresh for the new one. */
+  function keepUnsynced(store, uuid) {
+    const kept = emptyStore();
+    for (const a of store.outbox) {
+      const h = a.type === 'create_highlight' && store.highlights[a.id];
+      if (!h) continue; // other actions, and notes deleted since
+      const s = store.sources[h.url];
+      addHighlight(kept, {
+        url: h.url, site: s?.site, pageTitle: s?.title, topicTitle: store.topics[s?.topic_id]?.title,
+        text: h.text, section: h.section, anchor: h.anchor, color: h.color, createdAt: h.created_at,
+      }, uuid);
+    }
+    return kept;
+  }
+
   /** Our backup format: v1's pages object, with each page's topic added. */
   function toBackup(store) {
     const pages = {};
@@ -177,6 +193,6 @@
   }
 
   exports.SN = {
-    COLORS, emptyStore, addHighlight, removeHighlight, moveSource, notesFor, applyTopicIds, nextBatch, ack, applyPull, toBackup, backupToInputs,
+    COLORS, emptyStore, addHighlight, removeHighlight, moveSource, notesFor, applyTopicIds, nextBatch, ack, applyPull, keepUnsynced, toBackup, backupToInputs,
   };
 })(typeof module !== 'undefined' ? module.exports : globalThis);

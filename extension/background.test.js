@@ -1,17 +1,18 @@
 // Run with npm test (node --test). Loads background.js against a stand-in chrome.*
-// with no account connected, so nothing reaches the network.
+// with no account connected, so nothing reaches the network, unless a test stands in for the API too.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { SN } = require('./sync.js');
 
 // Objects made inside the worker's context have its own prototypes; a JSON copy
 // lets assert compare them.
 const copy = (v) => (v === undefined ? v : JSON.parse(JSON.stringify(v)));
 
-function loadWorker() {
-  const areas = { local: {}, session: {}, sync: {} };
+function loadWorker({ local = {}, fetch = () => { throw new Error('no network in tests'); } } = {}) {
+  const areas = { local: structuredClone(local), session: {}, sync: {} };
   const area = (data) => ({
     get: async (key) => (key in data ? { [key]: structuredClone(data[key]) } : {}),
     set: async (items) => { for (const [k, v] of Object.entries(items)) data[k] = structuredClone(v); },
@@ -35,10 +36,7 @@ function loadWorker() {
     contextMenus: { create() {}, onClicked: on('menu') },
     commands: { onCommand: on('command') },
   };
-  const ctx = vm.createContext({
-    chrome, console, crypto, URL, TextEncoder, atob, btoa,
-    fetch: () => { throw new Error('no network in tests'); },
-  });
+  const ctx = vm.createContext({ chrome, console, crypto, URL, TextEncoder, atob, btoa, fetch });
   ctx.importScripts = (...files) => files.forEach((f) => vm.runInContext(fs.readFileSync(path.join(__dirname, f), 'utf8'), ctx));
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8'), ctx);
   const send = (msg, sender) => new Promise((reply) => listeners.message(msg, sender, (r) => reply(copy(r))));
@@ -148,4 +146,55 @@ test('new pages go to the topic you are reading in until you pick another; notes
   // Three hours without a save let go: the page decides again.
   w.areas.local.current.at -= 3 * 3600e3;
   assert.equal((await plan(rye, 'Rye bread', 3)).topic, 'Rye bread');
+});
+
+test('connecting another account keeps the notes that never synced, and View waits for a save to land', async () => {
+  // This browser was last connected to an account since deleted: one note reached it, two were saved after.
+  let n = 0;
+  const old = SN.emptyStore();
+  const note = (text, extra) => ({ url: 'https://a.example/ring', pageTitle: 'Rings', site: 'a.example', topicTitle: 'Consistent hashing', text, section: 'Intro', ...extra });
+  SN.addHighlight(old, note('Synced long ago.'), () => `old-${++n}`);
+  old.outbox = [];
+  SN.addHighlight(old, note('Saved since.', { anchor: { prefix: 'Rings. ', suffix: ' Next' }, color: 'pink' }), () => `old-${++n}`);
+  SN.removeHighlight(old, SN.addHighlight(old, note('Saved, then deleted.'), () => `old-${++n}`).highlight.id);
+  old.owner = 'deleted-account';
+
+  const pushed = [];
+  const reply = (data) => ({ ok: true, status: 200, json: async () => data });
+  const w = loadWorker({
+    local: { store: old },
+    fetch: async (url, { body } = {}) => {
+      const route = new URL(url).pathname;
+      if (route === '/api/v1/extension/token') {
+        const exp = Date.now() / 1000 + 900;
+        return reply({ access_token: `x.${btoa(JSON.stringify({ exp }))}.y`, refresh_token: 'r', user: { id: 'new-account', email: 'me@example.com' } });
+      }
+      if (route === '/api/v1/sync/push') {
+        pushed.push(...JSON.parse(body).actions);
+        return reply({ topic_ids: {}, rejected: [] });
+      }
+      return reply({ topics: [], sources: [], highlights: [], cursor: 'c' }); // pull
+    },
+  });
+
+  const app = { origin: 'http://localhost:3000', frameId: 0, tab: { id: 9 } };
+  assert.ok((await w.send({ type: 'connect:start' }, app)).challenge);
+  assert.deepEqual(await w.send({ type: 'connect:finish', code: 'c' }, app), { email: 'me@example.com' });
+  await w.settle();
+  assert.deepEqual(pushed.map((a) => [a.type, a.title ?? a.text]), [['create_topic', 'Consistent hashing'], ['create_highlight', 'Saved since.']]);
+  assert.deepEqual([pushed[1].anchor, pushed[1].color, pushed[1].section], [{ prefix: 'Rings. ', suffix: ' Next' }, 'pink', 'Intro']);
+  const { store } = w.areas.local;
+  assert.equal(store.owner, 'new-account');
+  assert.deepEqual(Object.values(store.highlights).map((h) => h.text), ['Saved since.'], "the old account's copy is gone");
+  assert.deepEqual(store.outbox, []);
+
+  // The toast's View comes while its save is still on the way: it waits, then opens the topic on the web.
+  const why = page(2, 'https://b.example/why');
+  await w.send(save('https://b.example/why', 'Why consistent hashing matters', 'Nodes come and go.'), why);
+  await w.send({ type: 'view', url: 'https://b.example/why' }, why);
+  assert.equal(w.opened.at(-1), `http://localhost:3000/t/${w.areas.local.store.sources['https://b.example/why'].topic_id}`);
+  assert.equal(pushed.at(-1).text, 'Nodes come and go.');
+
+  await w.send({ type: 'connect' }, why);
+  assert.equal(w.opened.at(-1), 'http://localhost:3000/extension/connect', "the toast's Connect");
 });

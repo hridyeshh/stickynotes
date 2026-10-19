@@ -269,6 +269,7 @@
           <button type="button" data-act="undo">Undo</button>
           <button type="button" data-act="change">Change</button>
           <button type="button" data-act="view">View</button>
+          <button type="button" data-act="connect" hidden>Connect</button>
         </span>
       </div>
       <form class="pick" hidden>
@@ -371,6 +372,7 @@
     status(state, tone);
     $('[data-act=undo]').hidden = $('[data-act=change]').hidden = !about?.fresh;
     $('[data-act=view]').hidden = !about;
+    $('[data-act=connect]').hidden = true;
     $('.foot').hidden = !state && !about;
     pick.hidden = true;
     toastEl.classList.add('on');
@@ -398,7 +400,12 @@
     if (note?.id !== id) return;
     if (r.error) status('Offline. Will sync when you reconnect', 'off');
     else if (r.connected) status('Synced to your library', 'synced');
-    else status('Kept on this device. Connect to sync it', 'off');
+    else {
+      // Not in the library until this browser is connected, so offer that rather than the extension's own notes page.
+      status('Kept on this device', 'off');
+      $('[data-act=view]').hidden = true;
+      $('[data-act=connect]').hidden = false;
+    }
   }
 
   // ---- Save ----
@@ -453,6 +460,8 @@
     if (!act || !about) return;
     if (act === 'view') {
       send({ type: 'view', url: about.url });
+    } else if (act === 'connect') {
+      send({ type: 'connect' });
     } else if (act === 'undo') {
       const r = await send({ type: 'undo', id: about.id });
       if (r.error) return toast({ title: "Couldn't undo", sub: r.error });
