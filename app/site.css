@@ -429,9 +429,13 @@ button.chip:hover:not(:disabled) { translate: 0 -1px; }
   /* One rule per line, 3px under the baseline: descenders cross it, like pen on paper. */
   background: linear-gradient(transparent calc(var(--line) - 1px), var(--rule) 0) 0 calc(var(--base) + 4px - var(--line)) / 100% var(--line);
 }
-.ruled :is(h1, h2, p, ol) { margin: 0; }
-.ruled :is(h1, h2) { font: inherit; line-height: var(--line); letter-spacing: 0; translate: 0 calc(.445 * (var(--ink-size) - 1em)); }
-.ruled h1 { font-size: 2.5rem; text-wrap: balance; }
+/* Plain selector lists, not :is(): for older browsers Turbopack adds a :-webkit-any() copy, which Chrome scores as a
+   class, so its `font: inherit` beat .ruled h1's size in dev (production's webpack build adds no copy). */
+.ruled h1, .ruled h2, .ruled p, .ruled ol { margin: 0; }
+.ruled h1, .ruled h2 { font: inherit; line-height: var(--line); letter-spacing: 0; translate: 0 calc(.445 * (var(--ink-size) - 1em)); }
+/* The title: a blank line under the small print, then big writing whose every line takes two rules, its capitals
+   filling the upper one and its baseline on the lower (half a line further down than a one-rule heading's). */
+.ruled h1 { padding-top: var(--line); font-size: 4rem; line-height: calc(2 * var(--line)); translate: 0 calc(var(--line) / 2 + .445 * (var(--ink-size) - 1em)); text-wrap: balance; }
 .ruled h2 { font-size: 1.75rem; color: var(--ink-accent); }
 .ruled section { padding-top: var(--line); }
 /* Small print on the sheet: inline, so it sits on the handwriting's baseline. */
@@ -478,7 +482,7 @@ button.chip:hover:not(:disabled) { translate: 0 -1px; }
 .ruled .suggest-card .suggest-fine { font-size: 13px; color: var(--color-neutral-800); }
 .suggest-card .row-actions { margin-top: 16px; }
 @media (max-width: 560px) {
-  .ruled h1 { font-size: 2rem; }
+  .ruled h1 { font-size: 2.75rem; }
   /* Room for the writing: the meta line already says when the last note was saved. */
   .note-side span { display: none; }
 }

@@ -318,7 +318,6 @@ function ReadMore({ suggestions }: { suggestions: Promise<Suggestions> }) {
           </li>
         ))}
       </ul>
-      <p><span className="sheet-label">Found with Gemini and Brave Search from this topic&apos;s notes</span></p>
     </section>
   );
 }
