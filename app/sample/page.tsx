@@ -1,6 +1,7 @@
 import { SiteFooter, SiteHeader } from "@/components/layout";
 
-export const metadata = { title: "Consistent hashing, explained · stickynotes sample" };
+// For trying the extension on, not for search results: the article is a stand-in.
+export const metadata = { title: "Consistent hashing, explained · stickynotes sample", robots: { index: false } };
 
 // A real page to try the extension on: an h1 the topic matcher files as
 // "Consistent hashing", and h2 sections it uses as headings.

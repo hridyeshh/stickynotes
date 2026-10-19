@@ -1,6 +1,10 @@
 import { SiteFooter, SiteHeader } from "@/components/layout";
 
-export const metadata = { title: "Privacy policy · stickynotes" };
+export const metadata = {
+  title: "Privacy policy · stickynotes",
+  description: "What stickynotes collects, why, who else handles it, and how you control it.",
+  alternates: { canonical: "/privacy" },
+};
 
 const CONTACT = "contactus@paperboxd.in";
 const mail = <a href={`mailto:${CONTACT}`}>{CONTACT}</a>;

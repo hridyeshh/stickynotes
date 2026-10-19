@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Caveat, Cormorant_Garamond, Lora, Playwrite_DK_Loopet } from "next/font/google";
 import { SignedInFlag } from "@/components/signed-in";
 import { SIGNED_IN_COOKIE } from "@/lib/session";
+import { DESCRIPTION, SITE_URL } from "@/lib/site";
 import "./classical.css";
 import "./site.css";
 
@@ -14,8 +15,13 @@ const hand = Caveat({ subsets: ["latin"], variable: "--font-caveat" });
 const script = Playwrite_DK_Loopet({ variable: "--font-loopet" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "stickynotes",
-  description: "Select a passage on any page and keep it as a note, filed under its topic with every source listed.",
+  description: DESCRIPTION,
+  applicationName: "stickynotes",
+  // Every page's link preview: its own title and description, with app/opengraph-image.png.
+  openGraph: { type: "website", siteName: "stickynotes", locale: "en_GB" },
+  twitter: { card: "summary_large_image" },
 };
 
 // Public pages are static, the same for everyone, so their header carries links for both cases and CSS shows one

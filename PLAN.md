@@ -218,6 +218,14 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     (it fails at HEAD too). Restart Docker Desktop.
 - [~] **7. Ship.** Started 2026-10-12. Waiting on the domain the user is buying.
   - Done: `stickynotes-backend/railway.json` sets the `/health` health check (it applies from the next deploy).
+  - Done 2026-10-20 (uncommitted): SEO, like paperboxd's. `app/robots.ts` (disallows `/api/` and the signed-in
+    routes), `app/sitemap.ts` (/, /privacy, /terms), `metadataBase` plus Open Graph and a large Twitter card in
+    `app/layout.tsx`, `app/opengraph-image.png` (the promo tile redrawn at 1200×630) on every page, share pages
+    included (they no longer set their own `openGraph`, which dropped the image), canonicals, JSON-LD (WebSite +
+    SoftwareApplication) on the landing, and `/sample` noindex. `SITE_URL` lives in `lib/site.ts`. Checked in a
+    production build: the tags are in `<head>` for Googlebot, facebookexternalhit, Twitterbot and Slackbot. After
+    deploying, submit `https://www.stickynotes.in/sitemap.xml` in Search Console.
+  - Done 2026-10-20 (uncommitted): READMEs for both repos, after paperboxd's.
   - Once the domain exists:
     - Railway: `railway domain` for the API (generated or `api.<domain>`).
     - Vercel: import the repo; set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, API_URL=<API origin>; add the domain.

@@ -1,6 +1,10 @@
 import { SiteFooter, SiteHeader } from "@/components/layout";
 
-export const metadata = { title: "Terms · stickynotes" };
+export const metadata = {
+  title: "Terms · stickynotes",
+  description: "The terms for using stickynotes: your account, your notes, fair use, and how the service may change or end.",
+  alternates: { canonical: "/terms" },
+};
 
 export default function Terms() {
   return (

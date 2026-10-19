@@ -26,14 +26,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Shared by link, not published: kept out of search engines either way.
   const robots = { index: false, follow: false };
   if (!s) return { title: "Not found · stickynotes", robots };
-  const description = s.highlights[0]?.text.slice(0, 200);
-  return {
-    title: `${s.title} · stickynotes`,
-    description,
-    robots,
-    openGraph: { title: s.title, description, type: "article", siteName: "stickynotes" },
-    twitter: { card: "summary", title: s.title, description },
-  };
+  // Link previews take this title and description, with the root layout's site name and image. Setting openGraph
+  // here would replace the layout's whole object, image included.
+  return { title: `${s.title} · stickynotes`, description: s.highlights[0]?.text.slice(0, 200), robots };
 }
 
 export default async function SharedTopic({ params }: Props) {

@@ -1,9 +1,35 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { cloneElement } from "react";
 import { AppWindow, Download, GitMerge, Link2, Lock, PenLine, Trash2 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/layout";
 import { Label, Notebook, type Tone } from "@/components/notebook";
+import { STORE_URL } from "@/components/setup";
+import { DESCRIPTION, SITE_URL } from "@/lib/site";
 import "./landing.css";
+
+export const metadata: Metadata = {
+  title: "stickynotes · Highlights from any page, filed by topic",
+  alternates: { canonical: "/" },
+};
+
+// For search engines: the site's name, and what the extension is and costs. No ratings: there are none to cite.
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "WebSite", name: "stickynotes", url: `${SITE_URL}/` },
+    {
+      "@type": "SoftwareApplication",
+      name: "stickynotes",
+      description: DESCRIPTION,
+      applicationCategory: "BrowserApplication",
+      operatingSystem: "Chrome, Edge, Brave",
+      url: `${SITE_URL}/`,
+      downloadUrl: STORE_URL,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
+};
 
 const FAQ = [
   ["Is stickynotes free?", "Yes. Add the extension, sign in with Google and start saving."],
@@ -278,6 +304,8 @@ export default function Landing() {
         </section>
       </main>
       <SiteFooter />
+      {/* "<" escaped, so nothing in the data can close the script early. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA).replace(/</g, "\\u003c") }} />
     </>
   );
 }
