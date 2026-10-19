@@ -236,7 +236,7 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - Google OAuth client: add the prod origin and `https://<domain>/api/auth/callback/google`. Verify the domain in
       Search Console, then move the consent screen to Production with the homepage, privacy and terms URLs.
       Branding verified by Google 2026-10-12 (home page `https://www.stickynotes.in/`).
-    - `/privacy` and `/terms`: done 2026-10-13. "Draft" dropped; contact contactus@paperboxd.in (since 2026-10-15). The policy now lists every field, cookie, log and provider, plus both Limited Use
+    - `/privacy` and `/terms`: done 2026-10-13. "Draft" dropped; contact contact@paperboxd.in (since 2026-10-15). The policy now lists every field, cookie, log and provider, plus both Limited Use
       statements, and matches the store's privacy answers. Change them together.
   - Needs the user:
     - Store art: done 2026-10-12 in `brand/store/`: five 1280×800 screenshots (the bar, the topic picker, a topic

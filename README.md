@@ -4,7 +4,7 @@
 
 stickynotes is a browser extension and a web library for keeping what you read. Select a passage on any page and it is saved as a note under the page's section heading, filed into a **topic**: one note per subject, not per URL. Ten articles on consistent hashing become one "Consistent hashing" note, with every source listed at the end.
 
-**Website:** [stickynotes.in](https://www.stickynotes.in) · **Extension:** [Chrome Web Store](https://chromewebstore.google.com/detail/stickynotes/fciennljceeoagambkjppepghigkcnep) · **API:** [stickynotes-backend-production.up.railway.app](https://stickynotes-backend-production.up.railway.app/health) · **Contact:** contactus@paperboxd.in
+**Website:** [stickynotes.in](https://www.stickynotes.in) · **Extension:** [Chrome Web Store](https://chromewebstore.google.com/detail/stickynotes/fciennljceeoagambkjppepghigkcnep) · **API:** [stickynotes-backend-production.up.railway.app](https://stickynotes-backend-production.up.railway.app/health) · **Contact:** contact@paperboxd.in
 
 ---
 
@@ -702,5 +702,5 @@ Most are marked with a `ponytail:` comment where they live.
 
 ## Contact
 
-**Email:** contactus@paperboxd.in  
+**Email:** contact@paperboxd.in  
 **Website:** [stickynotes.in](https://www.stickynotes.in), a [PaperBoxd](https://paperboxd.in) production

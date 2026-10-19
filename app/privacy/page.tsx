@@ -6,7 +6,7 @@ export const metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-const CONTACT = "contactus@paperboxd.in";
+const CONTACT = "contact@paperboxd.in";
 const mail = <a href={`mailto:${CONTACT}`}>{CONTACT}</a>;
 
 // Keep this in step with the Chrome Web Store listing's privacy answers (PLAN.md, "Store listing draft").
