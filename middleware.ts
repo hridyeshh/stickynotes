@@ -14,8 +14,7 @@ export async function middleware(req: NextRequest) {
 
   let fresh: Session | null = null;
   if (refresh && !(access && secondsLeft(access) > 30)) {
-    // ponytail: two tabs refreshing in the same instant → one loses the rotation and
-    // lands on /signin. Add a short reuse window to the API's refresh if that shows up.
+    // Two tabs refreshing with one token both get the same new one (the API's Refresh).
     fresh = await api<Session>("/api/v1/auth/refresh", { method: "POST", body: { refresh_token: refresh } }).catch(() => null);
     if (fresh) access = fresh.access_token;
   }

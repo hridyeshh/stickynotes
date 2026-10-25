@@ -122,6 +122,11 @@ Its redirect URI is `http://localhost:3000/api/auth/callback/google`, so stop pa
     - Saving while not connected says "Kept on this device" with a Connect button (opens `/extension/connect`) in place of View.
     - Still open: the web's "Extension connected" pill and onboarding go by `extension_seen_at` (any extension, ever),
       not this browser's install.
+  - Fixed 2026-10-25 (uncommitted, backend only; the store extension needs no new version), reported as "connected
+    yesterday, disconnected today": a refresh whose answer never arrived (worker stopped, laptop slept) left the
+    extension holding a used token; its next refresh got 401, which clears the connection. `POST /auth/refresh` now
+    gives a used token the same successor again until that one is used (the successor is an HMAC of the old token),
+    and rotates in one statement, which also ends the website's two-tabs race. Live once the backend deploys.
 - [x] **4. Topics + extension UX.** Built 2026-10-10 on branch `phase-4` of this repo (stacked on `phase-3`; the
   backend needed no changes). Merged into `main` 2026-10-12. `npm test` and lint pass. Headless Chrome ran `content.js` on
   a test page with `chrome.*` stubbed: it saved two passages (one across an `<em>`), found a repeated sentence's
@@ -383,14 +388,11 @@ extension bridge):
 - The extension store is one storage key, rewritten on every save. Split it per record if stores reach many MB.
 - A first pull sends every live note in one response. Page it past tens of thousands of highlights.
 - The web library (`GET /library`) also loads every note at once; same ceiling, same fix.
-- If the extension's worker stops between the API rotating its refresh token and storing the new one, the
-  extension has to be connected again.
 - For production, set the origins in `extension/config.js` and the API origin in the manifest's host_permissions.
 - `npm audit` still flags postcss 8.4.31, which Next 15 pins; the fix needs Next 16. It only matters for
   untrusted CSS, and the app processes none.
 - Each sign-in makes one tokeninfo round-trip to Google.
 - The refresh rate limit is keyed by IP behind the Next server.
-- Two tabs refreshing at the same moment can send one of them to `/signin`.
 - Marks are found again by their text plus 32 characters either side. Passages inside iframes or other shadow roots,
   or selections that cross hidden text, aren't restored; the note itself is kept.
 - Change leaves the old topic in place with no notes. Topic matching skips it and the web library hides it.

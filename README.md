@@ -205,7 +205,7 @@ store = {
 - **Push, then pull.** Pushes go in batches of at most 100 actions and 512 KB (the API takes 1 MB per request). A batch is acknowledged by `seq`, so a save made while it was in flight stays queued. The server's topic-id map is applied to the store and to queued actions.
 - **A pull lands only with an empty outbox**, so an older server copy can't undo a change still waiting to go. A save made during a pull triggers another round.
 - **Triggers:** every save, opening the popup, every 5 minutes (`chrome.alarms`), and browser start.
-- **One token refresh at a time.** Refresh tokens rotate, so two concurrent refreshes would race and disconnect the loser. A revoked or expired session clears the extension's auth and the popup asks to connect again.
+- **One token refresh at a time.** Refresh tokens rotate, so a second refresh would waste a rotation. If the worker stops before storing a new token, the next refresh sends the old one and the API hands back the same new token. A revoked or expired session clears the extension's auth and the popup asks to connect again.
 - **Not connected:** notes stay on the device and wait in the outbox; they sync once you connect.
 - **Connecting another account** than the last one drops the old account's synced copy but keeps the notes that never reached it, filed afresh for the new account (`SN.keepUnsynced`).
 - **Disconnect** syncs first and refuses while anything is unsynced, then revokes the session and clears the local copy. The notes live on in the account.
@@ -654,8 +654,6 @@ Most are marked with a `ponytail:` comment where they live.
 | Limit | Where |
 |---|---|
 | The extension's store is one storage key, rewritten on every change. Split it per record if stores reach many MB. | `extension/background.js` |
-| If the extension's worker stops between the API rotating its refresh token and storing the new one, the extension has to be connected again. | `extension/background.js` |
-| Two tabs refreshing the website's session at the same moment can send one of them to `/signin`. | `middleware.ts` |
 | Topic matching compares exact words, plurals folded: "hash" and "hashing" don't match. | `extension/page.js` |
 | Passages inside iframes or other shadow roots, or selections that cross hidden text, aren't re-tinted. The note itself is kept. | `extension/content.js` |
 | A page's own scripts can read which passages were saved on it, through the CSS Highlight registry: the price of not touching its DOM. | `extension/content.js` |

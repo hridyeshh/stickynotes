@@ -61,10 +61,9 @@ function secondsLeft(jwt) {
   }
 }
 
-// One refresh in flight: refresh tokens rotate, so two at once would race and the
-// loser would be disconnected.
-// ponytail: if the worker stops between the API rotating the token and us storing
-// it, the session is lost and the popup asks to connect again.
+// One refresh in flight: refresh tokens rotate, so a second one would waste a rotation.
+// If the worker stops before storing the new token, the next refresh sends the old one
+// again and the API hands back the same new token.
 let refreshing = null;
 function refresh() {
   refreshing ??= (async () => {
